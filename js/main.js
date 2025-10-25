@@ -7,18 +7,18 @@
       messagingSenderId: "145576179199",
       appId: "1:145576179199:web:65897f211727a3bbf263ca"
     };
-
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
+    
     const announcementsDiv = document.getElementById("announcements");
     const filterSelect = document.getElementById("filter");
     const searchInput = document.getElementById("search-input");
     const toast = document.getElementById("toast");
-    const pinnedToggle = document.getElementById("pinned-toggle"); 
+    const pinnedToggle = document.getElementById("pinned-toggle");
     const darkModeToggle = document.getElementById("dark-mode-toggle");
     const body = document.body;
-
+    
     const overlay = document.getElementById("fullscreen-overlay");
     const exitBtn = document.getElementById("exit-btn");
     const largeTitle = document.getElementById("large-title");
@@ -27,47 +27,47 @@
     const largeTime = document.getElementById("large-time");
     const largePinBtn = document.getElementById("large-pin-btn");
     let currentAnnouncementId = null;
-
+    
     let announcements = [];
-
+    
     function enableDarkMode() {
-        body.classList.add('dark-mode');
-        localStorage.setItem('darkMode', 'enabled');
+      body.classList.add('dark-mode');
+      localStorage.setItem('darkMode', 'enabled');
     }
-
+    
     function disableDarkMode() {
-        body.classList.remove('dark-mode');
-        localStorage.setItem('darkMode', 'disabled');
+      body.classList.remove('dark-mode');
+      localStorage.setItem('darkMode', 'disabled');
     }
-
+    
     function initDarkMode() {
-        const savedMode = localStorage.getItem('darkMode');
-        if (savedMode === 'enabled') {
-            enableDarkMode();
-            darkModeToggle.checked = true;
-        } else if (savedMode === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            enableDarkMode();
-            darkModeToggle.checked = true;
-        } else {
-            disableDarkMode();
-            darkModeToggle.checked = false;
-        }
+      const savedMode = localStorage.getItem('darkMode');
+      if (savedMode === 'enabled') {
+        enableDarkMode();
+        darkModeToggle.checked = true;
+      } else if (savedMode === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        enableDarkMode();
+        darkModeToggle.checked = true;
+      } else {
+        disableDarkMode();
+        darkModeToggle.checked = false;
+      }
     }
     
     darkModeToggle.addEventListener('change', () => {
-        if (darkModeToggle.checked) {
-            enableDarkMode();
-        } else {
-            disableDarkMode();
-        }
+      if (darkModeToggle.checked) {
+        enableDarkMode();
+      } else {
+        disableDarkMode();
+      }
     });
-
+    
     initDarkMode();
-
+    
     function getPinnedAnnouncements() {
       return JSON.parse(localStorage.getItem('pinnedAnnouncements')) || [];
     }
-
+    
     function togglePin(id) {
       let pinned = getPinnedAnnouncements();
       const index = pinned.indexOf(id);
@@ -79,24 +79,24 @@
       }
       
       localStorage.setItem('pinnedAnnouncements', JSON.stringify(pinned));
-      displayAnnouncements(); 
+      displayAnnouncements();
       updateLargePinButton(id);
     }
-
+    
     function showToast() {
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 3000);
     }
-
+    
     db.ref("announcements").on("value", (snapshot) => {
       const newData = [];
-
+      
       snapshot.forEach((categorySnap) => {
         const categoryVal = categorySnap.val();
-
+        
         if (categoryVal.title && categoryVal.message) {
           newData.push({
-            id: categorySnap.key, 
+            id: categorySnap.key,
             title: categoryVal.title || "Untitled",
             message: categoryVal.message || "No message",
             category: categoryVal.category || "Uncategorized",
@@ -117,50 +117,50 @@
           });
         }
       });
-
+      
       if (announcements.length && newData.length > announcements.length) {
         showToast();
       }
-
+      
       announcements = newData;
       displayAnnouncements();
     });
-
+    
     function displayAnnouncements() {
       announcementsDiv.innerHTML = "";
       const selectedCategory = filterSelect.value;
       const searchTerm = searchInput.value.toLowerCase().trim();
-      const showPinnedOnly = pinnedToggle.checked; 
-      const pinnedIds = getPinnedAnnouncements(); 
-
+      const showPinnedOnly = pinnedToggle.checked;
+      const pinnedIds = getPinnedAnnouncements();
+      
       let filtered = announcements;
-
+      
       if (showPinnedOnly) {
         filtered = filtered.filter(a => pinnedIds.includes(a.id));
       }
-
+      
       if (selectedCategory !== "all") {
         filtered = filtered.filter(a => a.category === selectedCategory);
       }
-
+      
       if (searchTerm) {
-        filtered = filtered.filter(a => 
-          a.title.toLowerCase().includes(searchTerm) || 
+        filtered = filtered.filter(a =>
+          a.title.toLowerCase().includes(searchTerm) ||
           a.message.toLowerCase().includes(searchTerm)
         );
       }
-
+      
       filtered.sort((a, b) => {
         const isAPinned = pinnedIds.includes(a.id);
         const isBPinned = pinnedIds.includes(b.id);
         
-        if (isAPinned && !isBPinned) return -1; 
-        if (!isAPinned && isBPinned) return 1;  
+        if (isAPinned && !isBPinned) return -1;
+        if (!isAPinned && isBPinned) return 1;
         
         return new Date(b.timestamp) - new Date(a.timestamp);
       });
       
-
+      
       if (!filtered.length) {
         let noMatchMessage = "No announcements match your current filters or search term.";
         if (showPinnedOnly && !pinnedIds.length) {
@@ -171,13 +171,13 @@
         announcementsDiv.innerHTML = `<p>${noMatchMessage}</p>`;
         return;
       }
-
+      
       filtered.forEach((data) => {
         const div = document.createElement("div");
         div.className = "announcement";
-        div.dataset.announcement = JSON.stringify(data); 
+        div.dataset.announcement = JSON.stringify(data);
         
-        const isPinned = pinnedIds.includes(data.id); 
+        const isPinned = pinnedIds.includes(data.id);
         
         div.innerHTML = `
           <i class="fas fa-thumbtack pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'Unpin' : 'Pin'} announcement"></i>
@@ -189,50 +189,50 @@
         announcementsDiv.appendChild(div);
       });
     }
-
+    
     function updateLargePinButton(id) {
-        const pinnedIds = getPinnedAnnouncements();
-        const isPinned = pinnedIds.includes(id);
-
-        if (isPinned) {
-            largePinBtn.classList.add('pinned');
-            largePinBtn.title = 'Unpin announcement';
-        } else {
-            largePinBtn.classList.remove('pinned');
-            largePinBtn.title = 'Pin announcement';
-        }
+      const pinnedIds = getPinnedAnnouncements();
+      const isPinned = pinnedIds.includes(id);
+      
+      if (isPinned) {
+        largePinBtn.classList.add('pinned');
+        largePinBtn.title = 'Unpin announcement';
+      } else {
+        largePinBtn.classList.remove('pinned');
+        largePinBtn.title = 'Pin announcement';
+      }
     }
-
+    
     function openFullScreen(data) {
-        currentAnnouncementId = data.id;
-
-        largeTitle.textContent = data.title;
-        largeMessage.textContent = data.message;
-        largeCategory.textContent = data.category;
-        largeTime.textContent = `Posted: ${new Date(data.timestamp).toLocaleString()}`;
-        
-        largeCategory.className = 'category';
-
-        updateLargePinButton(data.id);
-
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden'; 
+      currentAnnouncementId = data.id;
+      
+      largeTitle.textContent = data.title;
+      largeMessage.textContent = data.message;
+      largeCategory.textContent = data.category;
+      largeTime.textContent = `Posted: ${new Date(data.timestamp).toLocaleString()}`;
+      
+      largeCategory.className = 'category';
+      
+      updateLargePinButton(data.id);
+      
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
-
+    
     function closeFullScreen() {
-        overlay.classList.remove('active');
-        document.body.style.overflow = 'auto'; 
-        currentAnnouncementId = null;
+      overlay.classList.remove('active');
+      document.body.style.overflow = 'auto';
+      currentAnnouncementId = null;
     }
     
     filterSelect.addEventListener("change", displayAnnouncements);
     searchInput.addEventListener("input", displayAnnouncements);
-    pinnedToggle.addEventListener("change", displayAnnouncements); 
-
+    pinnedToggle.addEventListener("change", displayAnnouncements);
+    
     announcementsDiv.addEventListener('click', (e) => {
       const announcementCard = e.target.closest('.announcement');
-      if (!announcementCard) return; 
-
+      if (!announcementCard) return;
+      
       if (e.target.classList.contains('pin-btn')) {
         const id = JSON.parse(announcementCard.dataset.announcement).id;
         if (id) {
@@ -247,13 +247,13 @@
         }
       }
     });
-
+    
     largePinBtn.addEventListener('click', () => {
-        if (currentAnnouncementId) {
-            togglePin(currentAnnouncementId);
-        }
+      if (currentAnnouncementId) {
+        togglePin(currentAnnouncementId);
+      }
     });
-
+    
     exitBtn.addEventListener('click', closeFullScreen);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
@@ -261,7 +261,7 @@
       }
     });
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && overlay.classList.contains('active')) {
-            closeFullScreen();
-        }
+      if (e.key === 'Escape' && overlay.classList.contains('active')) {
+        closeFullScreen();
+      }
     });

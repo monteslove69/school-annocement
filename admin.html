@@ -25,6 +25,78 @@
       <option value="Urgent">Urgent</option>
     </select>
     <button id="postBtn"><i class="fas fa-bullhorn"></i> Post Announcement</button>
+    <div class="schedule-card">
+      <div class="schedule-top">
+        <label class="schedule-toggle"><input type="checkbox" id="scheduleToggle"> <i class="fas fa-clock"></i> Schedule for later</label>
+        <small class="schedule-help">Pick a date/time the announcement will go live.</small>
+      </div>
+      <div class="datetime-wrapper" id="datetimeWrapper" aria-hidden="true">
+        <input type="datetime-local" id="scheduleAt" />
+        <div class="schedule-actions">
+          <button id="clearSchedule" class="cancel-btn">Clear</button>
+        </div>
+      </div>
+    </div>
+    <button id="manageBtn" class="manage-btn"><i class="fas fa-tasks"></i> Manage Announcements</button>
+  </div>
+
+  <!-- Modal for managing announcements -->
+  <div id="manageModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-list"></i> Manage Announcements</h2>
+        <button id="closeModal" class="close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="category-filter">
+          <label for="filterCategory">Filter by Category:</label>
+          <select id="filterCategory">
+            <option value="All">All Categories</option>
+            <option value="General">General</option>
+            <option value="Events">Events</option>
+            <option value="Exams">Exams</option>
+            <option value="Reminders">Reminders</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+        </div>
+        <div id="announcements-list">
+          <!-- Announcements will be loaded here dynamically -->
+        </div>
+
+        <h3 style="margin-top:18px;">Scheduled Announcements</h3>
+        <div id="scheduled-list">
+          <!-- Scheduled announcements will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for editing announcements -->
+  <div id="editModal" class="modal">
+    <div class="modal-content edit-modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-edit"></i> Edit Announcement</h2>
+        <button id="closeEditModal" class="close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-form">
+          <input type="text" id="editTitle" placeholder="Announcement Title">
+          <textarea id="editMessage" rows="4" placeholder="Announcement Message"></textarea>
+          <select id="editCategory">
+            <option value="" style="text-align: center;">Select Category</option>
+            <option value="General">General</option>
+            <option value="Events">Events</option>
+            <option value="Exams">Exams</option>
+            <option value="Reminders">Reminders</option>
+            <option value="Urgent">Urgent</option>
+          </select>
+          <div class="edit-actions">
+            <button id="updateBtn" class="update-btn"><i class="fas fa-save"></i> Update Announcement</button>
+            <button id="cancelEditBtn" class="cancel-btn"><i class="fas fa-times"></i> Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>

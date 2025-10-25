@@ -98,6 +98,320 @@
       width: auto;
       padding: 8px 20px;
     }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    .modal.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 900px;
+      margin: auto;
+      padding: 0;
+      position: relative;
+      transform: scale(0.7);
+      opacity: 0;
+      transition: all 0.3s ease-in-out;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      color: var(--secondary-color);
+      margin: 0;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--secondary-color);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: auto;
+      box-shadow: none;
+    }
+
+    .close-btn:hover {
+      color: var(--primary-color);
+      transform: scale(1.1);
+    }
+
+    .manage-btn {
+      background: var(--secondary-color);
+      color: white;
+      margin-top: 15px;
+    }
+
+    .manage-btn:hover {
+      background: var(--primary-color);
+      transform: translateY(-2px);
+    }
+
+    .schedule-card {
+      margin-top: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+
+    .schedule-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .schedule-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--secondary-color);
+    }
+
+    .schedule-toggle input {
+      transform: translateY(1px);
+      width: auto;
+    }
+
+    .schedule-help {
+      font-size: 12px;
+      color: rgba(0,0,0,0.45);
+      opacity: 0.9;
+    }
+
+    .datetime-wrapper {
+      margin-top: 10px;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+      transform: translateY(-6px);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .datetime-wrapper.active {
+      max-height: 120px; /* enough for the inner content */
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .datetime-wrapper input[type="datetime-local"] {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      color: var(--secondary-color);
+    }
+
+    .schedule-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .scheduled-item {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px dashed rgba(255,255,255,0.1);
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .scheduled-meta {
+      font-size: 13px;
+      color: var(--secondary-color);
+      opacity: 0.9;
+    }
+
+    .scheduled-actions button {
+      margin-left: 6px;
+    }
+
+    .category-filter {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .category-filter select {
+      width: auto;
+      min-width: 200px;
+    }
+
+    .announcement-item {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      position: relative;
+    }
+
+    .announcement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .announcement-title {
+      font-weight: bold;
+      font-size: 1.2em;
+      color: var(--secondary-color);
+    }
+
+    .announcement-category {
+      background: var(--primary-color);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+
+    .announcement-message {
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .announcement-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .edit-btn, .delete-btn {
+      width: auto;
+      padding: 6px 12px;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .edit-btn {
+      background: var(--primary-color);
+    }
+
+    .delete-btn {
+      background: var(--error-color);
+    }
+
+    .edit-btn:hover, .delete-btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    /* Edit Modal Specific Styles */
+    .edit-modal-content {
+      max-width: 600px;
+    }
+
+    .edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .edit-form input,
+    .edit-form textarea,
+    .edit-form select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--secondary-color);
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .update-btn,
+    .cancel-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .update-btn {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .cancel-btn {
+      background: var(--error-color);
+      color: white;
+    }
+
+    .update-btn:hover,
+    .cancel-btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    /* Z-index management for modals */
+    #manageModal {
+      z-index: 1000;
+    }
+
+    #editModal {
+      z-index: 1001;
+    }
     #logoutBtn:hover {
       background: #e64c4c;
       transform: translateY(-2px);
@@ -125,3 +439,5 @@
         margin: 15px auto;
       }
     }
+    
+    

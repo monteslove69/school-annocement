@@ -71,6 +71,53 @@
       transform: translateY(-2px);
     }
 
+    /* Error / validation styles */
+    .login-error {
+      background: rgba(255, 92, 92, 0.08);
+      color: #b30000;
+      border: 1px solid rgba(255, 92, 92, 0.2);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+      display: none; /* shown when needed */
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .login-success {
+      background: rgba(0, 153, 51, 0.08);
+      color: #006600;
+      border: 1px solid rgba(0, 153, 51, 0.18);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+      display: none; /* shown when needed */
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      transform-origin: top center;
+    }
+
+    .login-success.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .field-error {
+      color: #b30000;
+      font-size: 13px;
+      min-height: 18px;
+      margin-top: -8px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    input.error {
+      border-color: rgba(179, 0, 0, 0.6);
+      box-shadow: 0 0 0 3px rgba(179, 0, 0, 0.06) inset;
+    }
+
     @media (max-width: 500px) {
         h1 {
             font-size: 1.8em;
