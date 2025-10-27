@@ -23,9 +23,7 @@
     <h1><i class="fas fa-signal"></i> School Notices Dashboard</h1>
   </header>
   
-  <div class="controls-container">
-    <input type="text" id="search-input" placeholder="🔍 Search Announcements...">
-    
+  <div class="filter-container">
     <select id="filter">
       <option value="all" style="text-align: center;">All Categories</option>
       <option value="General">General</option>
@@ -59,6 +57,30 @@
     </div>
   </div>
 
+  <div id="search-overlay">
+      <div id="search-content">
+          <span id="close-search-btn">&times;</span>
+          <h2><i class="fas fa-search"></i> Search Announcements</h2>
+          <input type="text" id="modal-search-input" placeholder="Enter keywords to search...">
+          <div id="search-results-announcements" class="announcements-container">
+              <p class="search-tip">Start typing to see matching announcements.</p>
+          </div>
+      </div>
+  </div>
+  <nav class="nav-tabs">
+    <a href="#" class="nav-tab active">
+      <i class="fas fa-bullhorn"></i>
+      <span>Announcements</span>
+    </a>
+    <a href="#" id="open-search-btn" class="nav-tab">
+      <i class="fas fa-search"></i>
+      <span>Search</span>
+    </a>
+    <a href="login.html" class="nav-tab">
+      <i class="fas fa-user-lock"></i>
+      <span>Login</span>
+    </a>
+  </nav>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="js/main.js"></script>
