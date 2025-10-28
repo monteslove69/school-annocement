@@ -150,7 +150,7 @@ function applyFilters(data, categoryFilter, searchTerm, showPinned) {
     const isBPinned = pinnedIds.includes(b.id);
     if (isAPinned && !isBPinned) return -1;
     if (!isAPinned && isBPinned) return 1;
-    return new Date(b.timestamp) - new Date(b.timestamp);
+    return new Date(b.timestamp) - new Date(a.timestamp);
   });
   return filtered;
 }
@@ -222,7 +222,6 @@ function closeFullScreen() {
     searchOverlay.classList.add('active');
     modalSearchInput.focus();
     document.body.style.overflow = 'hidden';
-    // FIX: Re-run the search to display the updated pinned status
     performSearch(); 
     wasSearchModalActive = false;
   } else {
