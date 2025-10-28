@@ -216,37 +216,81 @@ if (window.location.pathname.includes("admin.html")) {
     }
 }
 
+// --- ⬇️ MODIFIED FUNCTION ⬇️ ---
 function loadAnnouncements(category = 'All') {
     const announcementsList = document.getElementById('announcements-list');
     if (!announcementsList) return;
     announcementsList.innerHTML = '<div class="loading">Loading announcements...</div>';
-    const fetchAnnouncements = (category === 'All')
-        ? db.ref('announcements').once('value')
-        : db.ref('announcements/' + category).once('value');
-    fetchAnnouncements
+
+    // 1. Set the database reference based on the filter
+    const fetchRef = (category === 'All')
+        ? db.ref('announcements')
+        : db.ref('announcements/' + category);
+
+    fetchRef.once('value')
         .then((snapshot) => {
             announcementsList.innerHTML = '';
             if (!snapshot.exists()) {
                 announcementsList.innerHTML = '<div class="no-announcements">No announcements found.</div>';
                 return;
             }
+
+            // 2. Create an empty array to hold all announcements
+            let allAnnouncements = [];
+
             if (category === 'All') {
+                // If 'All', loop through each category first...
                 snapshot.forEach((categorySnapshot) => {
                     const categoryName = categorySnapshot.key;
+                    // ...then loop through each post in that category
                     categorySnapshot.forEach((announcement) => {
-                        displayAnnouncement(announcement.key, { ...announcement.val(), category: categoryName });
+                        // Add the post to our array, making sure to include its ID and category
+                        allAnnouncements.push({
+                            id: announcement.key,
+                            category: categoryName,
+                            ...announcement.val()
+                        });
                     });
                 });
             } else {
+                // If a specific category, just loop through its posts
                 snapshot.forEach((announcement) => {
-                    displayAnnouncement(announcement.key, announcement.val());
+                    // Add the post to our array, including its ID
+                    allAnnouncements.push({
+                        id: announcement.key,
+                        ...announcement.val()
+                        // The 'category' field is already in announcement.val()
+                    });
                 });
             }
+
+            // 3. --- THIS IS THE NEW SORTING LOGIC ---
+            // Sort the entire array by timestamp in descending order (newest first)
+            allAnnouncements.sort((a, b) => {
+                const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+                const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+                return dateB - dateA; // Sorts from largest date (newest) to smallest (oldest)
+            });
+            // --- END OF NEW SORTING LOGIC ---
+
+
+            // 4. Check if the sorted array is empty
+            if (allAnnouncements.length === 0) {
+                announcementsList.innerHTML = '<div class="no-announcements">No announcements found.</div>';
+                return;
+            }
+            
+            // 5. Now, loop through the *sorted* array and display each item
+            allAnnouncements.forEach(data => {
+                // Use the 'id' we stored and the full data object
+                displayAnnouncement(data.id, data);
+            });
         })
         .catch((error) => {
             announcementsList.innerHTML = `<div class="error">Error loading announcements: ${error.message}</div>`;
         });
 }
+// --- ⬆️ MODIFIED FUNCTION ⬆️ ---
 
 /**
  * Creates and displays an announcement item in the list.
@@ -386,6 +430,7 @@ function editAnnouncement(id, category) {
                 };
             });
         })
+        // --- ⬇️ THIS IS THE FIX ⬇️ ---
         .catch(error => alert('❌ Error loading announcement: ' + error.message));
 }
 
