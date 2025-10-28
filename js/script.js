@@ -126,6 +126,7 @@ if (window.location.pathname.includes("admin.html")) {
       alert("⚠️ Please log in first!");
       window.location.href = "login.html";
     } else {
+      // ✅ Processor starts here once the user is authenticated
       startScheduledProcessor();
     }
   });
@@ -454,17 +455,29 @@ function cancelScheduled(key) {
 
 let _scheduledProcessorInterval = null;
 function startScheduledProcessor(intervalSeconds = 30) {
+  // If the processor is already running, exit.
   if (_scheduledProcessorInterval) return;
+
   const run = () => {
+    // Get the current time in ISO format to use for comparison
     const nowISO = new Date().toISOString();
+    
+    // Query Firebase for scheduled announcements where 'scheduledAt' is less than or equal to the current time
     db.ref('scheduled_announcements').orderByChild('scheduledAt').endAt(nowISO).once('value')
       .then(snapshot => {
+        // If no scheduled announcements are found that are past due, do nothing
         if (!snapshot.exists()) return;
+        
         const tasks = [];
+        // Iterate over the announcements that are past due
         snapshot.forEach(child => {
           const key = child.key;
           const data = child.val();
+          
+          // 1. Prepare to post the announcement to the main announcements section
           const postRef = db.ref('announcements/' + data.category).push();
+          
+          // 2. Set the announcement and remove it from scheduled_announcements
           const p = postRef.set({
             title: data.title,
             message: data.message,
@@ -472,18 +485,101 @@ function startScheduledProcessor(intervalSeconds = 30) {
             timestamp: new Date().toISOString(),
             scheduledFrom: data.scheduledAt
           }).then(() => db.ref('scheduled_announcements/' + key).remove());
-          tasks.push(p);
+          
+          tasks.push(p); // Add the promise to the tasks array
         });
+        
+        // Wait for all posts and removals to complete
         return Promise.all(tasks);
       })
       .then(() => {
-        if (document.getElementById('manageModal') && document.getElementById('manageModal').classList.contains('show')) {
-          loadAnnouncements(document.getElementById('filterCategory') ? document.getElementById('filterCategory').value : 'All');
+        // 3. Optional: Reload announcement lists if the management modal is open
+        const manageModal = document.getElementById('manageModal');
+        if (manageModal && manageModal.classList.contains('show')) {
+          const filterCategoryEl = document.getElementById('filterCategory');
+          const categoryToLoad = filterCategoryEl ? filterCategoryEl.value : 'All';
+          loadAnnouncements(categoryToLoad);
           loadScheduledAnnouncements();
         }
       })
       .catch(err => {
+        // Log any errors during the scheduling process
         console.warn('Scheduled processor error:', err.message || err);
       });
+  };
+
+  // Run the processor immediately when it starts
+  run();
+
+  // Set up the processor to run every 'intervalSeconds' seconds
+  _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
+  console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
+}
+
+function addPostButtonListener(postBtn) {
+  postBtn.addEventListener('click', () => {
+    const title = document.getElementById('title').value.trim();
+    const message = document.getElementById('message').value.trim();
+    const category = document.getElementById('category').value;
+    const scheduleToggle = document.getElementById('scheduleToggle').checked;
+    const scheduleAt = document.getElementById('scheduleAt').value;
+
+    if (!title || !message || !category) {
+      alert('⚠️ Please fill in all fields (Title, Message, and Category)!');
+      return;
+    }
+
+    const announcementData = {
+      title: title,
+      message: message,
+      category: category,
+      timestamp: new Date().toISOString(),
+    };
+
+    if (scheduleToggle) {
+      if (!scheduleAt) {
+        alert('⚠️ Please select a date and time for the scheduled announcement!');
+        return;
+      }
       
+      const scheduledAtDate = new Date(scheduleAt);
+      if (scheduledAtDate.getTime() <= Date.now()) {
+        alert('⚠️ Scheduled time must be in the future!');
+        return;
+      }
       
+      const scheduledData = {
+        ...announcementData,
+        scheduledAt: scheduledAtDate.toISOString()
+      };
+
+      db.ref('scheduled_announcements').push(scheduledData)
+        .then(() => {
+          alert('✅ Announcement scheduled successfully!');
+          document.getElementById('title').value = '';
+          document.getElementById('message').value = '';
+          document.getElementById('category').value = '';
+          document.getElementById('scheduleToggle').checked = false;
+          document.getElementById('scheduleAt').value = '';
+          document.getElementById('datetimeWrapper').classList.remove('active');
+          document.getElementById('datetimeWrapper').setAttribute('aria-hidden', 'true');
+        })
+        .catch(error => {
+          alert('❌ Error scheduling announcement: ' + error.message);
+        });
+
+    } else {
+      // Post immediately
+      db.ref(`announcements/${category}`).push(announcementData)
+        .then(() => {
+          alert('✅ Announcement posted successfully!');
+          document.getElementById('title').value = '';
+          document.getElementById('message').value = '';
+          document.getElementById('category').value = '';
+        })
+        .catch(error => {
+          alert('❌ Error posting announcement: ' + error.message);
+        });
+    }
+  });
+}
