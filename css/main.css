@@ -44,22 +44,23 @@ body {
   margin: 0;
   overflow-x: hidden;
   min-height: 100vh;
-  transition: background-color 0.5s, color 0.5s; /* ✅ KEPT: This is the main transition */
+  transition: background-color 0.5s, color 0.5s;
 }
 
 header {
+  font-size: 0.9rem;
   position: relative;
   margin-bottom: 30px;
-  padding-top: 10px;
+  padding-top: 35px;
 }
 
 .dark-mode-toggle-wrapper {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0; /* <-- Changed */
   display: flex;
   align-items: center;
-  padding: 10px 20px 0 0;
+  padding: 10px 0 0 20px; /* <-- Changed */
 }
 
 .toggle-container {
@@ -74,7 +75,7 @@ header {
   font-size: 14px;
   color: var(--primary-color);
   font-weight: 500;
-  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s;
 }
 
 h1 {
@@ -82,7 +83,7 @@ h1 {
   font-size: 2em;
   margin-bottom: 20px;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s;
 }
 .dark-mode h1 {
   text-shadow: none;
@@ -106,7 +107,7 @@ select {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   cursor: pointer;
-  transition: background 0.2s ease; /* ✅ FIX: Changed 'all' to 'background' for the :hover effect */
+  transition: all 0.2s ease;
   -webkit-appearance: none;
   appearance: none;
   width: 90%;
@@ -127,7 +128,7 @@ select {
   max-width: 500px;
   box-sizing: border-box;
   text-align: left;
-  transition: border-color 0.3s, box-shadow 0.3s; /* ✅ FIX: Changed 'all' to be specific for :focus */
+  transition: all 0.3s;
 }
 #modal-search-input:focus {
   outline: none;
@@ -211,7 +212,7 @@ input:checked + .slider:before {
   color: var(--time-color);
   font-style: italic;
   margin-top: 20px;
-  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s;
 }
 
 
@@ -227,8 +228,7 @@ input:checked + .slider:before {
   box-shadow: var(--card-shadow);
   text-align: left;
   animation: fadeIn 0.6s ease;
-  /* ✅ FIX: Removed 'box-shadow' from transition */
-  transition: transform 0.3s ease, background 0.5s, border 0.5s;
+  transition: transform 0.3s ease, background 0.5s, border 0.5s, box-shadow 0.5s;
   position: relative;
   cursor: pointer;
   box-sizing: border-box;
@@ -257,7 +257,7 @@ input:checked + .slider:before {
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   padding-bottom: 8px;
   padding-right: 30px;
-  /* transition: color 0.5s, border-bottom 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s, border-bottom 0.5s;
 }
 
 .announcement p {
@@ -265,7 +265,7 @@ input:checked + .slider:before {
   margin: 0 0 10px;
   line-height: 1.5em;
   font-size: 15px;
-  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -297,7 +297,7 @@ input:checked + .slider:before {
   margin-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.7);
   padding-top: 5px;
-  /* transition: color 0.5s, border-top 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s, border-top 0.5s;
 }
 
 .pin-btn {
@@ -475,7 +475,7 @@ input:checked + .slider:before {
   padding-bottom: 5px;
   border-bottom: 1px solid var(--text-color);
   width: 100%;
-  /* transition: color 0.5s, border-bottom 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s, border-bottom 0.5s;
 }
 
 #close-search-btn {
@@ -621,7 +621,7 @@ input:checked + .slider:before {
   padding-bottom: 5px;
   border-bottom: 1px solid var(--text-color);
   width: 100%;
-  /* transition: color 0.5s, border-bottom 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s, border-bottom 0.5s;
 }
 
 #close-login-btn {
@@ -654,7 +654,7 @@ input:checked + .slider:before {
   color: var(--primary-color);
   font-weight: 500;
   margin: 10px 0 5px 5px;
-  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
+  transition: color 0.5s;
 }
 
 .login-box input[type="email"],
@@ -667,8 +667,7 @@ input:checked + .slider:before {
   font-size: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-  /* ✅ FIX: Changed 'all' to be specific for :focus */
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
@@ -708,8 +707,7 @@ input:checked + .slider:before {
   cursor: pointer;
   margin-top: 25px;
   box-shadow: 0 4px 15px rgba(0, 119, 255, 0.4);
-  /* ✅ FIX: Changed 'all' to be specific for :hover */
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .login-box button:hover {
@@ -831,6 +829,6 @@ input:checked + .slider:before {
   }
 
   .dark-mode-toggle-wrapper {
-    padding: 10px 20px 0 0;
+    padding: 10px 0 0 20px;
   }
 }
