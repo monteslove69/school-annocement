@@ -124,7 +124,7 @@ if (window.location.pathname.includes("admin.html")) {
     auth.onAuthStateChanged((user) => {
         if (!user) {
             alert("⚠️ Please log in first!");
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         } else {
             // ✅ Processor starts here once the user is authenticated
             startScheduledProcessor();
