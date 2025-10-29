@@ -9,6 +9,16 @@
 </head>
 <body>
   <div class="header-content">
+    
+    <div class="dark-mode-toggle-wrapper">
+        <div class="toggle-container">
+            <label for="dark-mode-toggle" class="switch-label">Dark Mode</label>
+            <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
     <h1><i class="fas fa-user-shield"></i> SchoolConnect Admin Panel</h1>
     <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
   </div>
@@ -40,7 +50,6 @@
     <button id="manageBtn" class="manage-btn"><i class="fas fa-tasks"></i> Manage Announcements</button>
   </div>
 
-  <!-- Modal for managing announcements -->
   <div id="manageModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -60,18 +69,15 @@
           </select>
         </div>
         <div id="announcements-list">
-          <!-- Announcements will be loaded here dynamically -->
-        </div>
+          </div>
 
         <h3 style="margin-top:18px;">Scheduled Announcements</h3>
         <div id="scheduled-list">
-          <!-- Scheduled announcements will be loaded here -->
-        </div>
+          </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal for editing announcements -->
   <div id="editModal" class="modal">
     <div class="modal-content edit-modal-content">
       <div class="modal-header">

@@ -121,6 +121,51 @@ if (loginBtn) {
 }
 
 if (window.location.pathname.includes("admin.html")) {
+
+    // --- ⬇️ ADDED DARK MODE LOGIC ⬇️ ---
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const body = document.body;
+    const DARK_MODE_KEY = 'schoolconnect-dark-mode'; // Key for localStorage
+
+    /**
+     * Applies the dark mode class to the body and updates the toggle.
+     * @param {boolean} isDark Whether dark mode should be enabled.
+     */
+    function applyDarkMode(isDark) {
+        if (isDark) {
+            body.classList.add('dark-mode');
+            if (darkModeToggle) darkModeToggle.checked = true;
+        } else {
+            body.classList.remove('dark-mode');
+            if (darkModeToggle) darkModeToggle.checked = false;
+        }
+    }
+
+    /**
+     * Saves the user's dark mode preference to localStorage.
+     * @param {boolean} isDark The user's preference.
+     */
+    function saveDarkModePreference(isDark) {
+        localStorage.setItem(DARK_MODE_KEY, isDark ? 'true' : 'false');
+    }
+
+    // 1. Check for a saved preference when the page loads
+    const savedPreference = localStorage.getItem(DARK_MODE_KEY);
+    let isDark = savedPreference === 'true'; // Default to light mode (false) if no pref
+    applyDarkMode(isDark);
+
+    // 2. Add the event listener to the toggle switch
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', () => {
+            isDark = darkModeToggle.checked;
+            applyDarkMode(isDark);
+            saveDarkModePreference(isDark);
+        });
+    }
+    // --- ⬆️ END DARK MODE LOGIC ⬆️ ---
+
+
+    // --- Original Admin Page Logic ---
     auth.onAuthStateChanged((user) => {
         if (!user) {
             alert("⚠️ Please log in first!");

@@ -3,26 +3,29 @@
   --secondary-color: #004d99;
   --background-start: #a8c0ff;
   --background-end: #37c3ff;
-  --glass-bg: rgba(255, 255, 255, 0.3); /* INCREASED opacity from 0.15 to 0.3 */
-  --glass-border: rgba(255, 255, 255, 0.5); /* INCREASED opacity from 0.3 to 0.5 */
+  --glass-bg: rgba(255, 255, 255, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.5);
   --error-color: #ff5c5c;
-  --text-color: #333333; /* Defined for clarity */
+  --text-color: #333333;
 }
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, var(--background-start) 0%, var(--background-end) 100%);
-  color: var(--text-color); /* Used variable */
+  color: var(--text-color);
   text-align: center;
   padding: 20px;
   margin: 0;
   min-height: 100vh;
+  transition: background-color 0.5s, color 0.5s; /* Moved transition here */
 }
+
 h1 {
   color: var(--secondary-color);
   font-size: 2.5em;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-  margin: 0;
+  margin: 0 20px; /* MODIFIED: Added horizontal margin for spacing */
+  flex-shrink: 0; /* MODIFIED: Prevents title from shrinking */
 }
 
 .header-content {
@@ -54,17 +57,31 @@ input, textarea, select {
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.3); /* INCREASED opacity from 0.2 to 0.3 */
-  color: var(--secondary-color);
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--secondary-color); /* MODIFIED: Ensures selected value is dark */
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
+
 input:focus, textarea:focus, select:focus {
     outline: none;
-    background: rgba(255, 255, 255, 0.5); /* INCREASED opacity from 0.4 to 0.5 */
+    background: rgba(255, 255, 255, 0.5);
     border: 1px solid var(--primary-color);
 }
+
+/* --- NEW: Placeholder text styling --- */
+input::placeholder, textarea::placeholder {
+  color: var(--secondary-color);
+  opacity: 0.6;
+}
+/* This styles the placeholder option */
+select option[value=""] {
+  color: rgba(0, 0, 0, 0.5);
+}
+/* --- End Placeholder Styling --- */
+
+
 textarea { resize: vertical; }
 select {
     -webkit-appearance: none;
@@ -98,6 +115,7 @@ button {
   color: white;
   width: auto;
   padding: 8px 20px;
+  flex-shrink: 0; /* MODIFIED: Prevents button from shrinking */
 }
 
 /* Modal Styles */
@@ -190,11 +208,11 @@ button {
 
 .schedule-card {
   margin-top: 12px;
-  background: rgba(255,255,255,0.1); /* Slightly increased opacity */
-  border: 1px solid rgba(255,255,255,0.1); /* Slightly increased opacity */
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
   padding: 12px;
   border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05); /* Slightly increased opacity */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 .schedule-top {
@@ -220,8 +238,8 @@ button {
 
 .schedule-help {
   font-size: 12px;
-  color: rgba(0,0,0,0.6); /* Adjusted for better contrast */
-  opacity: 1; /* Ensured full opacity */
+  color: rgba(0,0,0,0.6);
+  opacity: 1;
 }
 
 .datetime-wrapper {
@@ -237,7 +255,7 @@ button {
 }
 
 .datetime-wrapper.active {
-  max-height: 120px; /* enough for the inner content */
+  max-height: 120px;
   opacity: 1;
   transform: translateY(0);
 }
@@ -246,8 +264,8 @@ button {
   flex: 1;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.2); /* Increased opacity */
-  background: rgba(255,255,255,0.1); /* Increased opacity */
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
   color: var(--secondary-color);
 }
 
@@ -257,8 +275,8 @@ button {
 }
 
 .scheduled-item {
-  background: rgba(255, 255, 255, 0.15); /* Increased opacity from 0.08 to 0.15 */
-  border: 1px dashed rgba(255,255,255,0.25); /* Increased opacity */
+  background: rgba(255, 255, 255, 0.3); /* MODIFIED: Increased opacity */
+  border: 1px dashed rgba(255,255,255,0.25);
   padding: 12px;
   border-radius: 10px;
   margin-bottom: 10px;
@@ -266,6 +284,7 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
+  text-align: left; /* NEW: Aligns text to the left */
 }
 
 .scheduled-meta {
@@ -285,19 +304,24 @@ button {
   gap: 10px;
 }
 
+.category-filter label {
+  color: var(--text-color); /* NEW: Ensure label is readable */
+}
+
 .category-filter select {
   width: auto;
   min-width: 200px;
 }
 
 .announcement-item {
-  background: rgba(255, 255, 255, 0.4); /* INCREASED opacity from 0.2 to 0.4 for best readability */
+  background: rgba(255, 255, 255, 0.6); /* MODIFIED: Increased opacity */
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   padding: 15px;
   margin-bottom: 15px;
   position: relative;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  text-align: left; /* NEW: Aligns text to the left */
 }
 
 .announcement-header {
@@ -311,7 +335,7 @@ button {
   font-weight: bold;
   font-size: 1.2em;
   color: var(--secondary-color);
-  text-shadow: 0 0 1px rgba(255, 255, 255, 0.8); /* Added shadow for readability */
+  text-shadow: none; /* MODIFIED: Removed shadow, bg is opaque enough */
 }
 
 .announcement-category {
@@ -320,30 +344,32 @@ button {
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 0.9em;
+  flex-shrink: 0; /* NEW: Prevents shrinking */
+  margin-left: 10px; /* NEW: Adds spacing */
 }
 
 .announcement-message {
   margin-bottom: 10px;
   line-height: 1.4;
+  color: var(--text-color); /* MODIFIED: Explicitly set text color */
 }
 
-/* NEW STYLES: Text Readability and Date/Time */
+/* This class was already on the message, but let's ensure it's correct */
 .readable-text {
-  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2); /* A slight shadow to make text pop */
-  color: var(--text-color); /* Ensures a consistent, darker text color */
+  text-shadow: none; /* MODIFIED: Removed shadow */
+  color: var(--text-color); 
 }
 
 .announcement-meta {
   font-size: 0.85em;
-  color: var(--secondary-color);
-  opacity: 0.8;
+  color: var(--text-color); /* MODIFIED: Switched to main text color */
+  opacity: 0.7; /* MODIFIED: Adjusted opacity */
   margin-top: -5px;
   margin-bottom: 10px;
   border-top: 1px solid rgba(0,0,0,0.1);
   padding-top: 5px;
   font-style: italic;
 }
-/* END NEW STYLES */
 
 .announcement-actions {
   display: flex;
@@ -389,7 +415,7 @@ button {
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.3); /* Increased opacity */
+  background: rgba(255, 255, 255, 0.3);
   color: var(--secondary-color);
 }
 
@@ -446,6 +472,8 @@ button {
   h1 {
     font-size: 1.8em;
     margin-bottom: 10px;
+    margin-left: 0; /* MODIFIED: Remove side margin on mobile */
+    margin-right: 0;
   }
   .header-content {
     flex-direction: column;
@@ -461,3 +489,140 @@ button {
     margin: 15px auto;
   }
 }
+
+/* --- ADDED DARK MODE STYLES --- */
+
+/* 2. Define Dark Mode Variables */
+.dark-mode {
+  --primary-color: #99c0ff;
+  --secondary-color: #6699ff;
+  --background-start: #1e3c72;
+  --background-end: #2a5298;
+  --glass-bg: rgba(0, 0, 0, 0.3); /* MODIFIED: Increased opacity */
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --error-color: #ff8a8a;
+  --text-color: #f0f0f0;
+}
+
+/* 3. Dark mode text adjustments */
+.dark-mode h1 {
+  text-shadow: none;
+}
+
+.dark-mode .schedule-help {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark-mode input, 
+.dark-mode textarea, 
+.dark-mode select {
+    color: var(--text-color); /* Make input text light */
+    background: rgba(0, 0, 0, 0.2); /* MODIFIED: Darker inputs */
+}
+
+/* --- NEW: Dark Mode Placeholder Styling --- */
+.dark-mode input::placeholder, 
+.dark-mode textarea::placeholder {
+  color: var(--text-color);
+  opacity: 0.5;
+}
+.dark-mode select option[value=""] {
+  color: rgba(255, 255, 255, 0.5);
+}
+/* --- End Dark Mode Placeholder Styling --- */
+
+/* 4. Toggle Switch Styles (adapted for admin header) */
+.dark-mode-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  /* MODIFIED: Removed margin-right: auto to allow space-between to work */
+  flex-shrink: 0; /* MODIFIED: Prevents toggle from shrinking */
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.switch-label {
+  margin-right: 10px;
+  font-size: 14px;
+  color: var(--secondary-color);
+  font-weight: 500;
+  transition: color 0.5s;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--secondary-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* --- NEW: Dark Mode Readability Fixes --- */
+
+.dark-mode .category-filter label {
+  color: var(--text-color); /* Ensure label is light */
+}
+
+.dark-mode .scheduled-item {
+  background: rgba(0, 0, 0, 0.25); /* Darker, more opaque background */
+}
+
+.dark-mode .announcement-item {
+  background: rgba(0, 0, 0, 0.4); /* MODIFIED: Darker, more opaque bg */
+}
+
+.dark-mode .announcement-category {
+  color: #1a1a2e; /* A very dark blue for high contrast */
+  font-weight: 600;
+  background: var(--primary-color); /* Uses light blue bg */
+}
+
+.dark-mode .announcement-meta {
+  border-top: 1px solid rgba(255,255,255,0.2); /* Lighter border */
+}
+/* --- End Dark Mode Readability Fixes --- */
