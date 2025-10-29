@@ -44,7 +44,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   min-height: 100vh;
-  transition: background-color 0.5s, color 0.5s;
+  transition: background-color 0.5s, color 0.5s; /* ✅ KEPT: This is the main transition */
 }
 
 header {
@@ -74,7 +74,7 @@ header {
   font-size: 14px;
   color: var(--primary-color);
   font-weight: 500;
-  transition: color 0.5s;
+  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 h1 {
@@ -82,7 +82,7 @@ h1 {
   font-size: 2em;
   margin-bottom: 20px;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-  transition: color 0.5s;
+  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 .dark-mode h1 {
   text-shadow: none;
@@ -106,7 +106,7 @@ select {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease; /* ✅ FIX: Changed 'all' to 'background' for the :hover effect */
   -webkit-appearance: none;
   appearance: none;
   width: 90%;
@@ -127,7 +127,7 @@ select {
   max-width: 500px;
   box-sizing: border-box;
   text-align: left;
-  transition: all 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s; /* ✅ FIX: Changed 'all' to be specific for :focus */
 }
 #modal-search-input:focus {
   outline: none;
@@ -211,7 +211,7 @@ input:checked + .slider:before {
   color: var(--time-color);
   font-style: italic;
   margin-top: 20px;
-  transition: color 0.5s;
+  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 
@@ -227,7 +227,8 @@ input:checked + .slider:before {
   box-shadow: var(--card-shadow);
   text-align: left;
   animation: fadeIn 0.6s ease;
-  transition: transform 0.3s ease, background 0.5s, border 0.5s, box-shadow 0.5s;
+  /* ✅ FIX: Removed 'box-shadow' from transition */
+  transition: transform 0.3s ease, background 0.5s, border 0.5s;
   position: relative;
   cursor: pointer;
   box-sizing: border-box;
@@ -256,7 +257,7 @@ input:checked + .slider:before {
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
   padding-bottom: 8px;
   padding-right: 30px;
-  transition: color 0.5s, border-bottom 0.5s;
+  /* transition: color 0.5s, border-bottom 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 .announcement p {
@@ -264,7 +265,7 @@ input:checked + .slider:before {
   margin: 0 0 10px;
   line-height: 1.5em;
   font-size: 15px;
-  transition: color 0.5s;
+  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -296,7 +297,7 @@ input:checked + .slider:before {
   margin-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.7);
   padding-top: 5px;
-  transition: color 0.5s, border-top 0.5s;
+  /* transition: color 0.5s, border-top 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 .pin-btn {
@@ -474,7 +475,7 @@ input:checked + .slider:before {
   padding-bottom: 5px;
   border-bottom: 1px solid var(--text-color);
   width: 100%;
-  transition: color 0.5s, border-bottom 0.5s;
+  /* transition: color 0.5s, border-bottom 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 #close-search-btn {
@@ -620,7 +621,7 @@ input:checked + .slider:before {
   padding-bottom: 5px;
   border-bottom: 1px solid var(--text-color);
   width: 100%;
-  transition: color 0.5s, border-bottom 0.5s;
+  /* transition: color 0.5s, border-bottom 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 #close-login-btn {
@@ -653,7 +654,7 @@ input:checked + .slider:before {
   color: var(--primary-color);
   font-weight: 500;
   margin: 10px 0 5px 5px;
-  transition: color 0.5s;
+  /* transition: color 0.5s; */ /* ✅ FIX: Removed unnecessary transition */
 }
 
 .login-box input[type="email"],
@@ -666,7 +667,8 @@ input:checked + .slider:before {
   font-size: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
+  /* ✅ FIX: Changed 'all' to be specific for :focus */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
@@ -706,7 +708,8 @@ input:checked + .slider:before {
   cursor: pointer;
   margin-top: 25px;
   box-shadow: 0 4px 15px rgba(0, 119, 255, 0.4);
-  transition: all 0.3s ease;
+  /* ✅ FIX: Changed 'all' to be specific for :hover */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .login-box button:hover {
