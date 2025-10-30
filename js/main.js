@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const auth = firebase.auth(); // Auth is needed for the login modal
+const auth = firebase.auth(); 
 
 /*
 ===============================================
@@ -44,7 +44,6 @@ const closeSearchBtn = document.getElementById("close-search-btn");
 const modalSearchInput = document.getElementById("modal-search-input");
 const searchResultsDiv = document.getElementById("search-results-announcements");
 
-// Login Overlay Elements
 const loginOverlay = document.getElementById("login-overlay");
 const openLoginBtn = document.getElementById("open-login-btn");
 const closeLoginBtn = document.getElementById("close-login-btn");
@@ -111,25 +110,22 @@ function showToast() {
   setTimeout(() => toast.classList.remove("show"), 3000);
 }
 
-// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 db.ref("announcements").on("value", (snapshot) => {
   const newData = [];
   snapshot.forEach((categorySnap) => {
     const categoryVal = categorySnap.val();
     if (categoryVal && categoryVal.title && categoryVal.message && categoryVal.category) {
-      // Handle edge case (less likely)
       newData.push({
         id: categorySnap.key,
-        ...categoryVal // Push all data from the snapshot
+        ...categoryVal 
       });
     } else if (categoryVal && typeof categoryVal === 'object') {
-      // Standard case: loop through each category
       categorySnap.forEach((postSnap) => {
         const post = postSnap.val();
         if (post && post.title && post.message) {
           newData.push({
             id: postSnap.key,
-            ...post // Push all data from the post (including downloadURL and isImage)
+            ...post 
           });
         }
       });
@@ -168,7 +164,6 @@ function applyFilters(data, categoryFilter, searchTerm, showPinned) {
   return filtered;
 }
 
-// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 function displayAnnouncements(container, filteredData, categoryFilter, showPinnedOnly) {
   container.innerHTML = "";
   const pinnedIds = getPinnedAnnouncements();
@@ -196,27 +191,68 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
     
     const isPinned = pinnedIds.includes(data.id);
 
-    // --- NEW: Logic to show image OR link ---
+    // --- REWRITTEN "SMART GALLERY" LOGIC ---
     let attachmentHTML = '';
-    if (data.downloadURL) {
-      if (data.isImage) {
-        // If it's an image, create an <img> tag
-        attachmentHTML = `<img src="${data.downloadURL}" alt="${data.fileName || 'Announcement Image'}" class="announcement-image" onclick="event.stopPropagation()">`;
-      } else {
-        // Otherwise, create a link (for PDFs, etc.)
-        const fileName = data.fileName || 'View Attachment';
-        attachmentHTML = `
-          <div class="attachment-container">
-            <a href="${data.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link" onclick="event.stopPropagation()">
-              <i class="fas fa-paperclip"></i> ${fileName}
-            </a>
-          </div>
-        `;
-      }
-    }
-    // --- END OF NEW LOGIC ---
+    if (data.attachments && data.attachments.length > 0) {
+        const images = data.attachments.filter(att => att.isImage);
+        const files = data.attachments.filter(att => !att.isImage);
+        const imageCount = images.length;
+        
+        let imagesHTML = '';
+        if (imageCount > 0) {
+            let gridClass = `grid-count-${imageCount}`;
+            if (imageCount >= 3) {
+                // Use "3-plus" style for 3 or more images
+                gridClass = 'grid-count-3-plus'; 
+            }
 
-    // --- UPDATED: Add the {attachmentHTML} variable below the time ---
+            imagesHTML = `<div class="attachments-grid ${gridClass}">`;
+            
+            if (imageCount === 1) {
+                imagesHTML += `<div class="announcement-image-wrapper">
+                                 <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
+                               </div>`;
+            } else if (imageCount === 2) {
+                imagesHTML += `<div class="announcement-image-wrapper">
+                                 <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
+                               </div>
+                               <div class="announcement-image-wrapper">
+                                 <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
+                               </div>`;
+            } else if (imageCount >= 3) {
+                // Show first 2 images normally
+                imagesHTML += `<div class="announcement-image-wrapper">
+                                 <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
+                               </div>
+                               <div class="announcement-image-wrapper">
+                                 <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
+                               </div>`;
+                
+                // Show 3rd image with "+ more" overlay
+                const moreCount = imageCount - 2; // Total - 2 shown = "more"
+                imagesHTML += `<div class="announcement-image-wrapper more-images-wrapper">
+                                 <img src="${images[2].downloadURL}" alt="${images[2].fileName}" class="announcement-image">
+                                 <div class="more-images-overlay">+${moreCount}</div>
+                               </div>`;
+            }
+            imagesHTML += `</div>`;
+        }
+
+        let filesHTML = '';
+        if (files.length > 0) {
+            filesHTML = `<div class="attachment-container">` +
+                files.map(att => `
+                    <a href="${att.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link" onclick="event.stopPropagation()">
+                        <i class="fas fa-paperclip"></i> ${att.fileName}
+                    </a>
+                `).join('') +
+                `</div>`;
+        }
+        
+        attachmentHTML = imagesHTML + filesHTML; // Show images first, then files
+    }
+    // --- END OF UPDATE ---
+
     div.innerHTML = `
       <i class="fas fa-thumbtack pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'Unpin' : 'Pin'} announcement"></i>
       <div class="category">${data.category || "Unknown"}</div>
@@ -241,7 +277,6 @@ function updateLargePinButton(id) {
   }
 }
 
-// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 function openFullScreen(data) {
   currentAnnouncementId = data.id;
   wasSearchModalActive = searchOverlay.classList.contains('active');
@@ -252,30 +287,38 @@ function openFullScreen(data) {
   largeTime.textContent = `Posted: ${new Date(data.timestamp).toLocaleString()}`;
   largeCategory.className = `category category-${(data.category || 'unknown').toLowerCase()}`;
   
-  // --- NEW: Logic to show image OR link in modal ---
+  // --- UPDATED: Logic to show all images/links in modal ---
   const largeAttachmentEl = document.getElementById('large-attachment');
-  if (data.downloadURL) {
-    if (data.isImage) {
-      // If it's an image, create an <img> tag for the modal
-      largeAttachmentEl.innerHTML = `<img src="${data.downloadURL}" alt="${data.fileName || 'Announcement Image'}" class="announcement-image-large">`;
-    } else {
-      // Otherwise, create a link (for PDFs, etc.)
-      const fileName = data.fileName || 'View Attachment';
-      largeAttachmentEl.innerHTML = `
-        <a href="${data.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link">
-          <i class="fas fa-paperclip"></i> ${fileName}
-        </a>
-      `;
-    }
-  } else {
-    // Clear it if no attachment
-    largeAttachmentEl.innerHTML = '';
+  largeAttachmentEl.innerHTML = ''; 
+  
+  if (data.attachments && data.attachments.length > 0) {
+      let imagesHTML = '';
+      let filesHTML = '';
+
+      data.attachments.forEach(att => {
+          if (att.isImage) {
+              imagesHTML += `<img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-large">`;
+          } else {
+              filesHTML += `
+                  <a href="${att.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link">
+                      <i class="fas fa-paperclip"></i> ${att.fileName}
+                  </a>
+              `;
+          }
+      });
+      
+      if (filesHTML) {
+          largeAttachmentEl.innerHTML += `<div class="attachment-container">${filesHTML}</div>`;
+      }
+      if (imagesHTML) {
+          largeAttachmentEl.innerHTML += imagesHTML; 
+      }
   }
-  // --- END OF NEW LOGIC ---
+  // --- END OF UPDATE ---
 
   updateLargePinButton(data.id);
   searchOverlay.classList.remove('active');
-  loginOverlay.classList.remove('active'); // Close login if open
+  loginOverlay.classList.remove('active'); 
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -295,8 +338,8 @@ function closeFullScreen() {
 }
 
 function openSearchModal() {
-  overlay.classList.remove('active'); // Close announcement if open
-  loginOverlay.classList.remove('active'); // Close login if open
+  overlay.classList.remove('active'); 
+  loginOverlay.classList.remove('active'); 
   searchOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   modalSearchInput.focus();
@@ -316,14 +359,13 @@ function performSearch() {
   displayAnnouncements(searchResultsDiv, searchResults, 'all', false);
 }
 
-// Login Modal Functions
 function openLoginModal() {
-  searchOverlay.classList.remove('active'); // Close search if open
-  overlay.classList.remove('active'); // Close announcement if open
+  searchOverlay.classList.remove('active'); 
+  overlay.classList.remove('active'); 
   loginOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   const emailInput = document.getElementById('email');
-  if(emailInput) emailInput.focus(); // Focus on email input
+  if(emailInput) emailInput.focus(); 
 }
 
 function closeLoginModal() {
@@ -342,7 +384,6 @@ openSearchBtn.addEventListener('click', (e) => {
 closeSearchBtn.addEventListener('click', closeSearchModal);
 modalSearchInput.addEventListener("input", performSearch);
 
-// Login Modal Listeners
 if (openLoginBtn) {
   openLoginBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -378,12 +419,9 @@ document.addEventListener('click', (e) => {
     }
     e.stopPropagation();
   } else {
-    // Check if the click was on the image or link
-    if (e.target.closest('.attachment-link') || e.target.closest('.announcement-image')) {
-      // Let the link or image click go through
+    if (e.target.closest('a') || e.target.closest('.announcement-image-wrapper')) {
       return;
     }
-    // Otherwise, open the modal
     try {
       const data = JSON.parse(announcementCard.dataset.announcement);
       openFullScreen(data);

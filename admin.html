@@ -27,9 +27,15 @@
     <input type="text" id="title" placeholder="Announcement Title">
     <textarea id="message" rows="4" placeholder="Announcement Message"></textarea>
     
-    <label for="fileUpload">Attach File (Optional):</label>
-    <input type="file" id="fileUpload">
+    <div class="file-input-header">
+      <label for="fileUpload" class="file-upload-label"><i class="fas fa-paperclip"></i> Add Files</label>
+      <button id="clearFilesBtn" class="clear-files-btn" style="display: none;"><i class="fas fa-times"></i> Clear All</button>
+    </div>
+    <input type="file" id="fileUpload" multiple>
+    
+    <div id="filePreviewContainer"></div>
     <div id="uploadStatus" style="font-size: 12px; margin-top: 5px;"></div>
+
     <select id="category">
       <option value="" style="text-align: center;">Select Category</option>
       <option value="General">General</option>
@@ -39,6 +45,9 @@
       <option value="Urgent">Urgent</option>
     </select>
     <button id="postBtn"><i class="fas fa-bullhorn"></i> Post Announcement</button>
+    
+    <button id="cancelUploadBtn" class="cancel-btn" style="display: none; margin-top: 0; width: 100%;">Cancel Upload</button>
+
     <div class="schedule-card">
       <div class="schedule-top">
         <label class="schedule-toggle"><input type="checkbox" id="scheduleToggle"> <i class="fas fa-clock"></i> Schedule for later</label>

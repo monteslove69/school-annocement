@@ -17,15 +17,15 @@ body {
   padding: 20px;
   margin: 0;
   min-height: 100vh;
-  transition: background-color 0.5s, color 0.5s; /* Moved transition here */
+  transition: background-color 0.5s, color 0.5s;
 }
 
 h1 {
   color: var(--secondary-color);
   font-size: 2.5em;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
-  margin: 0 20px; /* MODIFIED: Added horizontal margin for spacing */
-  flex-shrink: 0; /* MODIFIED: Prevents title from shrinking */
+  margin: 0 20px;
+  flex-shrink: 0;
 }
 
 .header-content {
@@ -58,7 +58,7 @@ input, textarea, select {
   border-radius: 12px;
   font-size: 16px;
   background: rgba(255, 255, 255, 0.3);
-  color: var(--secondary-color); /* MODIFIED: Ensures selected value is dark */
+  color: var(--secondary-color);
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -70,16 +70,13 @@ input:focus, textarea:focus, select:focus {
     border: 1px solid var(--primary-color);
 }
 
-/* --- NEW: Placeholder text styling --- */
 input::placeholder, textarea::placeholder {
   color: var(--secondary-color);
   opacity: 0.6;
 }
-/* This styles the placeholder option */
 select option[value=""] {
   color: rgba(0, 0, 0, 0.5);
 }
-/* --- End Placeholder Styling --- */
 
 
 textarea { resize: vertical; }
@@ -115,10 +112,9 @@ button {
   color: white;
   width: auto;
   padding: 8px 20px;
-  flex-shrink: 0; /* MODIFIED: Prevents button from shrinking */
+  flex-shrink: 0;
 }
 
-/* Modal Styles */
 .modal {
   display: none;
   position: fixed;
@@ -275,7 +271,7 @@ button {
 }
 
 .scheduled-item {
-  background: rgba(255, 255, 255, 0.3); /* MODIFIED: Increased opacity */
+  background: rgba(255, 255, 255, 0.3);
   border: 1px dashed rgba(255,255,255,0.25);
   padding: 12px;
   border-radius: 10px;
@@ -284,7 +280,7 @@ button {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  text-align: left; /* NEW: Aligns text to the left */
+  text-align: left;
 }
 
 .scheduled-meta {
@@ -293,7 +289,6 @@ button {
   opacity: 1;
 }
 
-/* --- UPDATED THIS STYLE --- */
 .scheduled-meta-file {
   font-size: 13px;
   color: var(--secondary-color);
@@ -318,7 +313,7 @@ button {
 }
 
 .category-filter label {
-  color: var(--text-color); /* NEW: Ensure label is readable */
+  color: var(--text-color);
 }
 
 .category-filter select {
@@ -327,14 +322,14 @@ button {
 }
 
 .announcement-item {
-  background: rgba(255, 255, 255, 0.6); /* MODIFIED: Increased opacity */
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   padding: 15px;
   margin-bottom: 15px;
   position: relative;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  text-align: left; /* NEW: Aligns text to the left */
+  text-align: left;
 }
 
 .announcement-header {
@@ -348,7 +343,7 @@ button {
   font-weight: bold;
   font-size: 1.2em;
   color: var(--secondary-color);
-  text-shadow: none; /* MODIFIED: Removed shadow, bg is opaque enough */
+  text-shadow: none;
 }
 
 .announcement-category {
@@ -357,12 +352,11 @@ button {
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 0.9em;
-  flex-shrink: 0; /* NEW: Prevents shrinking */
-  margin-left: 10px; /* NEW: Adds spacing */
+  flex-shrink: 0;
+  margin-left: 10px;
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* --- ADDED: Specific Category Colors (Light Mode) --- */
 .announcement-item.category-urgent .announcement-category {
   background-color: rgba(220, 38, 38, 0.85); 
 }
@@ -385,18 +379,18 @@ button {
 .announcement-message {
   margin-bottom: 10px;
   line-height: 1.4;
-  color: var(--text-color); /* MODIFIED: Explicitly set text color */
+  color: var(--text-color);
 }
 
 .readable-text {
-  text-shadow: none; /* MODIFIED: Removed shadow */
+  text-shadow: none;
   color: var(--text-color);  
 }
 
 .announcement-meta {
   font-size: 0.85em;
-  color: var(--text-color); /* MODIFIED: Switched to main text color */
-  opacity: 0.7; /* MODIFIED: Adjusted opacity */
+  color: var(--text-color);
+  opacity: 0.7;
   margin-top: -5px;
   margin-bottom: 10px;
   border-top: 1px solid rgba(0,0,0,0.1);
@@ -429,7 +423,6 @@ button {
   opacity: 0.9;
 }
 
-/* Edit Modal Specific Styles */
 .edit-modal-content {
   max-width: 600px;
 }
@@ -485,11 +478,9 @@ button {
   opacity: 0.9;
 }
 
-/* Z-index management for modals */
 #manageModal {
   z-index: 1000;
 }
-
 #editModal {
   z-index: 1001;
 }
@@ -499,49 +490,123 @@ button {
 }
 
 
-/* --- ADDED ATTACHMENT UPLOAD STYLES --- */
-input[type="file"] {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.3);
-  color: var(--secondary-color);
-  box-sizing: border-box;
-  font-size: 14px;
+/* --- UPDATED ATTACHMENT UPLOAD STYLES --- */
+.file-input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 5px;
 }
-
-/* Style the file selector button */
-input[type="file"]::file-selector-button {
-  background-color: var(--primary-color);
+.file-upload-label {
+  padding: 8px 15px;
+  background-color: var(--secondary-color);
   color: white;
-  border: none;
-  padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
-  margin-right: 10px;
+  font-size: 14px;
+  font-weight: 500;
   transition: background-color 0.3s;
 }
-
-input[type="file"]::file-selector-button:hover {
-  background-color: var(--secondary-color);
+.file-upload-label:hover {
+  background-color: var(--primary-color);
 }
-
+.file-upload-label i {
+  margin-right: 5px;
+}
+input[type="file"] {
+  display: none;
+}
+.clear-files-btn {
+  width: auto;
+  background: none;
+  border: none;
+  color: var(--error-color);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 5px;
+  margin: 0;
+  box-shadow: none;
+}
 #uploadStatus {
   color: var(--secondary-color);
   font-weight: 500;
 }
-/* --- END ATTACHMENT UPLOAD STYLES --- */
 
+/* --- UPDATED FILE PREVIEW CONTAINER STYLES --- */
+#filePreviewContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+.file-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.file-preview img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+.file-preview-icon {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: var(--secondary-color);
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+.file-preview span {
+  font-size: 11px;
+  color: var(--secondary-color);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+  margin-top: 4px;
+}
+.file-preview-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 20px;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
 
-/* --- ADDED ATTACHMENT LINK STYLES (for manage modal) --- */
+/* --- ATTACHMENTLINK STYLES (for manage modal) --- */
 .attachment-container {
   margin-top: 15px;
   padding-top: 10px;
   border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-
 .attachment-link {
   display: inline-flex;
   align-items: center;
@@ -555,8 +620,8 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 500;
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: fit-content;
 }
-
 .attachment-link:hover {
   background-color: var(--secondary-color);
   transform: translateY(-2px);
@@ -565,14 +630,31 @@ input[type="file"]::file-selector-button:hover {
 .attachment-link i {
   font-size: 12px;
 }
-/* --- END ATTACHMENT LINK STYLES --- */
 
-/* --- ADDED IMAGE STYLE (for manage modal) --- */
-.announcement-image {
+/* --- IMAGE STYLES (for manage modal) --- */
+.attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+.attachment-grid .announcement-image-wrapper {
+  position: relative;
   width: 100%;
-  height: auto;
+  padding-bottom: 100%; /* 1:1 aspect ratio */
   border-radius: 10px;
-  margin: 15px 0 10px 0;
+  overflow: hidden;
+}
+.announcement-image-thumbnail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
   border: 1px solid var(--glass-border);
 }
 
@@ -584,7 +666,7 @@ input[type="file"]::file-selector-button:hover {
   h1 {
     font-size: 1.8em;
     margin-bottom: 10px;
-    margin-left: 0; /* MODIFIED: Remove side margin on mobile */
+    margin-left: 0;
     margin-right: 0;
   }
   .header-content {
@@ -602,37 +684,29 @@ input[type="file"]::file-selector-button:hover {
   }
 }
 
-/* --- ADDED DARK MODE STYLES --- */
-
-/* 2. Define Dark Mode Variables */
+/* --- DARK MODE STYLES --- */
 .dark-mode {
   --primary-color: #99c0ff;
   --secondary-color: #6699ff;
   --background-start: #1e3c72;
   --background-end: #2a5298;
-  --glass-bg: rgba(0, 0, 0, 0.3); /* MODIFIED: Increased opacity */
+  --glass-bg: rgba(0, 0, 0, 0.3);
   --glass-border: rgba(255, 255, 255, 0.2);
   --error-color: #ff8a8a;
   --text-color: #f0f0f0;
 }
-
-/* 3. Dark mode text adjustments */
 .dark-mode h1 {
   text-shadow: none;
 }
-
 .dark-mode .schedule-help {
   color: rgba(255, 255, 255, 0.6);
 }
-
 .dark-mode input, 
 .dark-mode textarea, 
 .dark-mode select {
-    color: var(--text-color); /* Make input text light */
-    background: rgba(0, 0, 0, 0.2); /* MODIFIED: Darker inputs */
+    color: var(--text-color);
+    background: rgba(0, 0, 0, 0.2);
 }
-
-/* --- NEW: Dark Mode Placeholder Styling --- */
 .dark-mode input::placeholder, 
 .dark-mode textarea::placeholder {
   color: var(--text-color);
@@ -641,23 +715,18 @@ input[type="file"]::file-selector-button:hover {
 .dark-mode select option[value=""] {
   color: rgba(255, 255, 255, 0.5);
 }
-/* --- End Dark Mode Placeholder Styling --- */
 
-/* 4. Toggle Switch Styles (adapted for admin header) */
 .dark-mode-toggle-wrapper {
   display: flex;
   align-items: center;
-  /* MODIFIED: Removed margin-right: auto to allow space-between to work */
-  flex-shrink: 0; /* MODIFIED: Prevents toggle from shrinking */
+  flex-shrink: 0;
 }
-
 .toggle-container {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   margin: 0;
 }
-
 .switch-label {
   margin-right: 10px;
   font-size: 14px;
@@ -665,7 +734,6 @@ input[type="file"]::file-selector-button:hover {
   font-weight: 500;
   transition: color 0.5s;
 }
-
 .switch {
   position: relative;
   display: inline-block;
@@ -698,15 +766,12 @@ input[type="file"]::file-selector-button:hover {
   background-color: white;
   transition: .4s;
 }
-
 input:checked + .slider {
   background-color: var(--secondary-color);
 }
-
 input:checked + .slider:before {
   transform: translateX(22px);
 }
-
 .slider.round {
   border-radius: 34px;
 }
@@ -714,16 +779,12 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-/* --- NEW: Dark Mode Readability Fixes --- */
-
 .dark-mode .category-filter label {
-  color: var(--text-color); /* Ensure label is light */
+  color: var(--text-color);
 }
-
 .dark-mode .scheduled-item {
-  background: rgba(0, 0, 0, 0.25); /* Darker, more opaque background */
+  background: rgba(0, 0, 0, 0.25);
 }
-/* --- ADDED: Dark mode scheduled file text --- */
 .dark-mode .scheduled-meta-file {
   color: var(--primary-color);
 }
@@ -731,18 +792,14 @@ input:checked + .slider:before {
   color: var(--primary-color);
   opacity: 0.8;
 }
-
 .dark-mode .announcement-item {
-  background: rgba(0, 0, 0, 0.4); /* MODIFIED: Darker, more opaque bg */
+  background: rgba(0, 0, 0, 0.4);
 }
-
 .dark-mode .announcement-category {
-  color: #1a1a2e; /* A very dark blue for high contrast */
+  color: #1a1a2e;
   font-weight: 600;
-  background: var(--primary-color); /* Uses light blue bg */
+  background: var(--primary-color);
 }
-
-/* --- ADDED: Dark Mode Specific Category Colors --- */
 .dark-mode .announcement-item.category-urgent .announcement-category {
   background-color: rgba(220, 38, 38, 0.85);
   color: white;
@@ -763,22 +820,21 @@ input:checked + .slider:before {
   background-color: #888;
   color: #1a1a2e;
 }
-
-
 .dark-mode .announcement-meta {
-  border-top: 1px solid rgba(255,255,255,0.2); /* Lighter border */
+  border-top: 1px solid rgba(255,255,255,0.2);
 }
 
-/* --- ADDED: Dark Mode Attachment Styles --- */
-.dark-mode input[type="file"] {
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--text-color);
-}
-.dark-mode input[type="file"]::file-selector-button {
+.dark-mode .file-upload-label {
   background-color: var(--secondary-color);
-  color: #1a1a2e;
-  font-weight: 600;
+  color: #f0f0f0;
 }
+.dark-mode .file-upload-label:hover {
+  background-color: var(--primary-color);
+}
+.dark-mode .clear-files-btn {
+  color: var(--error-color);
+}
+
 .dark-mode #uploadStatus {
   color: var(--primary-color);
 }
@@ -792,21 +848,21 @@ input:checked + .slider:before {
 .dark-mode .attachment-link:hover {
   background-color: var(--primary-color);
 }
-/* --- ADDED: Dark Mode Image Style --- */
-.dark-mode .announcement-image {
+.dark-mode .attachment-grid {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+.dark-mode .attachment-grid .announcement-image-wrapper {
   border: 1px solid var(--glass-border);
 }
-/* --- End Dark Mode Styles --- */
-
-/* --- ADDED IMAGE STYLE (for manage modal) --- */
-.announcement-image {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-  margin: 15px 0 10px 0;
+.dark-mode .announcement-image-thumbnail {
   border: 1px solid var(--glass-border);
 }
-
-.dark-mode .announcement-image {
+.dark-mode .file-preview img,
+.dark-mode .file-preview-icon {
   border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--primary-color);
+}
+.dark-mode .file-preview span {
+  color: var(--primary-color);
 }
