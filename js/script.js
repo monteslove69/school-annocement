@@ -23,11 +23,12 @@ const auth = firebase.auth();
 ===============================================
 */
 
-// NOTE: I am combining your login logic and admin logic into one file
-// as that is how you provided it.
+// NOTE: This file contains logic for BOTH the login modal (on index.html)
+// and the admin panel (on admin.html).
 
 const loginBtn = document.getElementById("loginBtn");
 if (loginBtn) {
+    // This is the login logic for your main.js file
     const emailEl = document.getElementById('email');
     const passwordEl = document.getElementById('password');
     const emailErrorEl = document.getElementById('emailError');
@@ -356,6 +357,26 @@ function displayAnnouncement(id, data) {
         });
     }
 
+    // --- ⬇️ UPDATED: Create attachment HTML (if it exists) ⬇️ ---
+    let attachmentHTML = '';
+    if (data.downloadURL) {
+        if (data.isImage) {
+            // If it's an image, create an <img> tag
+            attachmentHTML = `<img src="${data.downloadURL}" alt="${data.fileName || 'Announcement Image'}" class="announcement-image">`;
+        } else {
+            // Otherwise, create a link (for PDFs, etc.)
+            const fileName = data.fileName || 'View Attachment';
+            attachmentHTML = `
+                <div class="attachment-container">
+                  <a href="${data.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link" onclick="event.stopPropagation()">
+                    <i class="fas fa-paperclip"></i> ${fileName}
+                  </a>
+                </div>
+            `;
+        }
+    }
+    // --- ⬆️ END OF UPDATE ⬆️ ---
+
     div.innerHTML = `
         <div class="announcement-header">
             <div class="announcement-title">${data.title}</div>
@@ -365,6 +386,9 @@ function displayAnnouncement(id, data) {
         <div class="announcement-meta">
             Posted on: ${postedDate}
         </div>
+        
+        ${attachmentHTML} 
+        
         <div class="announcement-actions">
             <button class="edit-btn" onclick="editAnnouncement('${id}', '${data.category}')">
                 <i class="fas fa-edit"></i> Edit
@@ -398,6 +422,10 @@ function editAnnouncement(id, category) {
             editTitle.value = data.title;
             editMessage.value = data.message;
             editCategory.value = data.category;
+            
+            // Note: This simple edit form does not support editing/deleting the attachment.
+            // That would require more complex logic.
+
             editModal.classList.add('show');
             
             const closeEditForm = () => {
@@ -433,13 +461,20 @@ function editAnnouncement(id, category) {
                     alert('⚠️ Please fill in all fields!');
                     return;
                 }
+                
+                // --- UPDATED: Keep the original attachment data ---
                 const updates = {
                     title,
                     message,
                     category: newCategory,
                     timestamp: data.timestamp, // Keep original timestamp
-                    lastEdited: new Date().toISOString() // Add last edited timestamp
+                    lastEdited: new Date().toISOString(),
+                    fileName: data.fileName || null,
+                    downloadURL: data.downloadURL || null,
+                    isImage: data.isImage || false // <-- Pass this along
                 };
+                // --- END OF UPDATE ---
+
                 if (newCategory !== category) {
                     const oldRef = db.ref(`announcements/${category}/${id}`);
                     const newRef = db.ref(`announcements/${newCategory}`).push();
@@ -485,6 +520,8 @@ function editAnnouncement(id, category) {
 }
 
 function deleteAnnouncement(id, category) {
+    // Note: This does not delete the file from Cloudinary, only the database record.
+    // Deleting from Cloudinary would require a secure backend function.
     if (confirm('Are you sure you want to delete this announcement?')) {
         db.ref(`announcements/${category}/${id}`).remove()
             .then(() => {
@@ -495,6 +532,7 @@ function deleteAnnouncement(id, category) {
     }
 }
 
+// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 function loadScheduledAnnouncements() {
     const scheduledList = document.getElementById('scheduled-list');
     if (!scheduledList) return;
@@ -517,12 +555,22 @@ function loadScheduledAnnouncements() {
                     minute: '2-digit',
                     hour12: true
                 });
+
+                // --- NEW: Add attachment info (with icon) to scheduled list ---
+                let attachmentMeta = '';
+                if (data.fileName) {
+                    const icon = data.isImage ? 'fa-image' : 'fa-paperclip';
+                    attachmentMeta = `<div class="scheduled-meta-file"><i class="fas ${icon}"></i> ${data.fileName}</div>`;
+                }
+                // --- END OF NEW BLOCK ---
+
                 const div = document.createElement('div');
                 div.className = 'scheduled-item';
                 div.innerHTML = `
                     <div>
                         <div><strong>${data.title}</strong></div>
                         <div class="scheduled-meta">Scheduled for: ${scheduledDate}</div>
+                        ${attachmentMeta}
                     </div>
                     <div class="scheduled-actions">
                         <button class="post-now-btn" data-key="${key}">Post Now</button>
@@ -549,6 +597,7 @@ function loadScheduledAnnouncements() {
         });
 }
 
+// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 function postScheduledNow(key) {
     const ref = db.ref('scheduled_announcements/' + key);
     ref.once('value')
@@ -556,12 +605,17 @@ function postScheduledNow(key) {
             const data = snap.val();
             if (!data) throw new Error('Scheduled announcement not found');
             const postRef = db.ref('announcements/' + data.category).push();
+            
+            // --- UPDATED: Ensure all data (including file) is copied ---
             return postRef.set({
                 title: data.title,
                 message: data.message,
                 category: data.category,
                 timestamp: new Date().toISOString(),
-                scheduledFrom: data.scheduledAt
+                scheduledFrom: data.scheduledAt,
+                fileName: data.fileName || null,
+                downloadURL: data.downloadURL || null,
+                isImage: data.isImage || false // <-- Pass this along
             }).then(() => ref.remove());
         })
         .then(() => {
@@ -573,6 +627,7 @@ function postScheduledNow(key) {
 }
 
 function cancelScheduled(key) {
+    // Note: This does not delete the file from Cloudinary, only the database record.
     if (!confirm('Cancel this scheduled announcement?')) return;
     db.ref('scheduled_announcements/' + key).remove()
         .then(() => {
@@ -584,53 +639,41 @@ function cancelScheduled(key) {
 
 let _scheduledProcessorInterval = null;
 
-// --- ⬇️ THIS IS THE FIX ⬇️ ---
-
-// 1. Change the default interval from 30 seconds to 5 seconds
+// Using the more efficient 5-second interval
 function startScheduledProcessor(intervalSeconds = 5) {
     
-// --- ⬆️ END OF FIX ⬆️ ---
-
-    // If the processor is already running, exit.
     if (_scheduledProcessorInterval) return;
 
     const run = () => {
-        // Get the current time in ISO format to use for comparison
         const nowISO = new Date().toISOString();
 
-        // Query Firebase for scheduled announcements where 'scheduledAt' is less than or equal to the current time
         db.ref('scheduled_announcements').orderByChild('scheduledAt').endAt(nowISO).once('value')
             .then(snapshot => {
-                // If no scheduled announcements are found that are past due, do nothing
                 if (!snapshot.exists()) return;
 
                 const tasks = [];
-                // Iterate over the announcements that are past due
                 snapshot.forEach(child => {
                     const key = child.key;
                     const data = child.val();
-
-                    // 1. Prepare to post the announcement to the main announcements section
                     const postRef = db.ref('announcements/' + data.category).push();
 
-                    // 2. Set the announcement and remove it from scheduled_announcements
+                    // --- UPDATED: Ensure all data (including file) is posted ---
                     const p = postRef.set({
                         title: data.title,
                         message: data.message,
                         category: data.category,
                         timestamp: new Date().toISOString(),
-                        scheduledFrom: data.scheduledAt
+                        scheduledFrom: data.scheduledAt,
+                        fileName: data.fileName || null,
+                        downloadURL: data.downloadURL || null,
+                        isImage: data.isImage || false // <-- Pass this along
                     }).then(() => db.ref('scheduled_announcements/' + key).remove());
 
-                    tasks.push(p); // Add the promise to the tasks array
+                    tasks.push(p); 
                 });
-
-                // Wait for all posts and removals to complete
                 return Promise.all(tasks);
             })
             .then((tasks) => {
-                // 3. Optional: Reload announcement lists if the management modal is open
-                // (Check if tasks is not undefined and has items)
                 if (tasks && tasks.length > 0) {
                     const manageModal = document.getElementById('manageModal');
                     if (manageModal && manageModal.classList.contains('show')) {
@@ -642,37 +685,43 @@ function startScheduledProcessor(intervalSeconds = 5) {
                 }
             })
             .catch(err => {
-                // Log any errors during the scheduling process
                 console.warn('Scheduled processor error:', err.message || err);
             });
     };
 
-    // Run the processor immediately when it starts
     run();
-
-    // Set up the processor to run every 'intervalSeconds' seconds
     _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
-    
-    // --- ⬇️ THIS IS THE FIX ⬇️ ---
-    
-    // 2. Update the console log message to match
     console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
-    
-    // --- ⬆️ END OF FIX ⬆️ ---
 }
 
+
+// --- ⬇️ REPLACED THIS ENTIRE FUNCTION ⬇️ ---
 function addPostButtonListener(postBtn) {
-    postBtn.addEventListener('click', () => {
+    postBtn.addEventListener('click', async () => {
+        
+        // --- ⚠️ YOUR CLOUDINARY DETAILS ⚠️ ---
+        const CLOUD_NAME = "dr65ufuol"; // ⬅️ Your Cloud Name
+        const UPLOAD_PRESET = "schoolconnect-upload"; // ⬅️ Your Upload Preset
+        // ------------------------------------------
+
+        // 1. Get all text and file data
         const title = document.getElementById('title').value.trim();
         const message = document.getElementById('message').value.trim();
         const category = document.getElementById('category').value;
         const scheduleToggle = document.getElementById('scheduleToggle').checked;
         const scheduleAt = document.getElementById('scheduleAt').value;
+        const file = document.getElementById('fileUpload').files[0];
+        const uploadStatus = document.getElementById('uploadStatus');
 
         if (!title || !message || !category) {
             alert('⚠️ Please fill in all fields (Title, Message, and Category)!');
             return;
         }
+
+        // Disable button
+        postBtn.disabled = true;
+        postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
+        uploadStatus.textContent = '';
 
         const announcementData = {
             title: title,
@@ -681,54 +730,99 @@ function addPostButtonListener(postBtn) {
             timestamp: new Date().toISOString(),
         };
 
-        if (scheduleToggle) {
-            if (!scheduleAt) {
+        // 2. Handle File Upload (if one exists)
+        if (file) {
+            uploadStatus.textContent = 'Uploading file...';
+            try {
+                // --- THIS IS THE CLOUDINARY UPLOAD LOGIC ---
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', UPLOAD_PRESET); 
+                
+                const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.secure_url) {
+                    // Add file info to our announcement data
+                    announcementData.fileName = file.name;
+                    announcementData.downloadURL = data.secure_url; // This is the URL we save to Firebase
+                    
+                    // --- ⬇️ THIS IS THE NEW LINE ⬇️ ---
+                    announcementData.isImage = file.type.startsWith('image/'); // Save if it's an image
+                    // --- ⬆️ END OF NEW LINE ⬆️ ---
+
+                    uploadStatus.textContent = 'Upload complete!';
+                } else {
+                    throw new Error('File upload failed. Please try again.');
+                }
+                // --- END OF CLOUDINARY LOGIC ---
+
+            } catch (error) {
+                alert('❌ Error uploading file: ' + error.message);
+                postBtn.disabled = false;
+                postBtn.innerHTML = 'Post Announcement';
+                uploadStatus.textContent = 'Upload failed.';
+                return; // Stop if upload fails
+            }
+        } 
+        
+        // 3. Save everything to Firebase
+        await saveAnnouncementToFirebase(announcementData, scheduleToggle, scheduleAt);
+        
+        // Reset button and status
+        postBtn.disabled = false;
+        postBtn.innerHTML = 'Post Announcement';
+        uploadStatus.textContent = '';
+    });
+}
+
+// --- ⬇️ ADDED THIS NEW HELPER FUNCTION ⬇️ ---
+async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime) {
+    try {
+        if (isScheduled) {
+            // --- Save as a SCHEDULED post ---
+            if (!scheduledTime) {
                 alert('⚠️ Please select a date and time for the scheduled announcement!');
                 return;
             }
-
-            const scheduledAtDate = new Date(scheduleAt);
+            const scheduledAtDate = new Date(scheduledTime);
             if (scheduledAtDate.getTime() <= Date.now()) {
                 alert('⚠️ Scheduled time must be in the future!');
                 return;
             }
 
             const scheduledData = {
-                ...announcementData,
+                ...dataToSave,
                 scheduledAt: scheduledAtDate.toISOString()
             };
 
-            db.ref('scheduled_announcements').push(scheduledData)
-                .then(() => {
-                    alert('✅ Announcement scheduled successfully!');
-                    document.getElementById('title').value = '';
-                    document.getElementById('message').value = '';
-                    document.getElementById('category').value = '';
-                    document.getElementById('scheduleToggle').checked = false;
-                    document.getElementById('scheduleAt').value = '';
-                    
-                    const dtWrapper = document.getElementById('datetimeWrapper');
-                    if (dtWrapper) {
-                        dtWrapper.classList.remove('active');
-                        dtWrapper.setAttribute('aria-hidden', 'true');
-                    }
-                })
-                .catch(error => {
-                    alert('❌ Error scheduling announcement: ' + error.message);
-                });
-
+            await db.ref('scheduled_announcements').push(scheduledData);
+            alert('✅ Announcement scheduled successfully!');
+            
         } else {
-            // Post immediately
-            db.ref(`announcements/${category}`).push(announcementData)
-                .then(() => {
-                    alert('✅ Announcement posted successfully!');
-                    document.getElementById('title').value = '';
-                    document.getElementById('message').value = '';
-                    document.getElementById('category').value = '';
-                })
-                .catch(error => {
-                    alert('❌ Error posting announcement: ' + error.message);
-                });
+            // --- Save as an IMMEDIATE post ---
+            await db.ref(`announcements/${dataToSave.category}`).push(dataToSave);
+            alert('✅ Announcement posted successfully!');
         }
-    });
+
+        // 4. Clear the form
+        document.getElementById('title').value = '';
+        document.getElementById('message').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('fileUpload').value = null; // Clear file input
+        document.getElementById('scheduleToggle').checked = false;
+        document.getElementById('scheduleAt').value = '';
+        const dtWrapper = document.getElementById('datetimeWrapper');
+        if (dtWrapper) {
+            dtWrapper.classList.remove('active');
+            dtWrapper.setAttribute('aria-hidden', 'true');
+        }
+
+    } catch (error) {
+        alert('❌ Error saving announcement to Firebase: ' + error.message);
+    }
 }

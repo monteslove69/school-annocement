@@ -293,6 +293,19 @@ button {
   opacity: 1;
 }
 
+/* --- UPDATED THIS STYLE --- */
+.scheduled-meta-file {
+  font-size: 13px;
+  color: var(--secondary-color);
+  font-style: italic;
+  opacity: 0.8;
+}
+.scheduled-meta-file i {
+  margin-right: 4px;
+  color: var(--secondary-color);
+  opacity: 0.6;
+}
+
 .scheduled-actions button {
   margin-left: 6px;
 }
@@ -346,6 +359,27 @@ button {
   font-size: 0.9em;
   flex-shrink: 0; /* NEW: Prevents shrinking */
   margin-left: 10px; /* NEW: Adds spacing */
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- ADDED: Specific Category Colors (Light Mode) --- */
+.announcement-item.category-urgent .announcement-category {
+  background-color: rgba(220, 38, 38, 0.85); 
+}
+.announcement-item.category-exams .announcement-category {
+  background-color: rgba(245, 158, 11, 0.85);
+}
+.announcement-item.category-events .announcement-category {
+  background-color: rgba(139, 92, 246, 0.85);
+}
+.announcement-item.category-reminders .announcement-category {
+  background-color: rgba(13, 148, 136, 0.85);
+}
+.announcement-item.category-general .announcement-category {
+  background-color: rgba(0, 119, 255, 0.8);
+}
+.announcement-item.category-unknown .announcement-category {
+  background-color: #666;
 }
 
 .announcement-message {
@@ -354,10 +388,9 @@ button {
   color: var(--text-color); /* MODIFIED: Explicitly set text color */
 }
 
-/* This class was already on the message, but let's ensure it's correct */
 .readable-text {
   text-shadow: none; /* MODIFIED: Removed shadow */
-  color: var(--text-color); 
+  color: var(--text-color);  
 }
 
 .announcement-meta {
@@ -464,6 +497,85 @@ button {
   background: #e64c4c;
   transform: translateY(-2px);
 }
+
+
+/* --- ADDED ATTACHMENT UPLOAD STYLES --- */
+input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--secondary-color);
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+/* Style the file selector button */
+input[type="file"]::file-selector-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background-color 0.3s;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background-color: var(--secondary-color);
+}
+
+#uploadStatus {
+  color: var(--secondary-color);
+  font-weight: 500;
+}
+/* --- END ATTACHMENT UPLOAD STYLES --- */
+
+
+/* --- ADDED ATTACHMENT LINK STYLES (for manage modal) --- */
+.attachment-container {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.attachment-link:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.attachment-link i {
+  font-size: 12px;
+}
+/* --- END ATTACHMENT LINK STYLES --- */
+
+/* --- ADDED IMAGE STYLE (for manage modal) --- */
+.announcement-image {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 15px 0 10px 0;
+  border: 1px solid var(--glass-border);
+}
+
 
 @media (max-width: 600px) {
   body {
@@ -611,6 +723,14 @@ input:checked + .slider:before {
 .dark-mode .scheduled-item {
   background: rgba(0, 0, 0, 0.25); /* Darker, more opaque background */
 }
+/* --- ADDED: Dark mode scheduled file text --- */
+.dark-mode .scheduled-meta-file {
+  color: var(--primary-color);
+}
+.dark-mode .scheduled-meta-file i {
+  color: var(--primary-color);
+  opacity: 0.8;
+}
 
 .dark-mode .announcement-item {
   background: rgba(0, 0, 0, 0.4); /* MODIFIED: Darker, more opaque bg */
@@ -622,7 +742,71 @@ input:checked + .slider:before {
   background: var(--primary-color); /* Uses light blue bg */
 }
 
+/* --- ADDED: Dark Mode Specific Category Colors --- */
+.dark-mode .announcement-item.category-urgent .announcement-category {
+  background-color: rgba(220, 38, 38, 0.85);
+  color: white;
+}
+.dark-mode .announcement-item.category-exams .announcement-category {
+  background-color: rgba(245, 158, 11, 0.85);
+  color: white;
+}
+.dark-mode .announcement-item.category-events .announcement-category {
+  background-color: rgba(139, 92, 246, 0.85);
+  color: white;
+}
+.dark-mode .announcement-item.category-reminders .announcement-category {
+  background-color: rgba(13, 148, 136, 0.85);
+  color: white;
+}
+.dark-mode .announcement-item.category-unknown .announcement-category {
+  background-color: #888;
+  color: #1a1a2e;
+}
+
+
 .dark-mode .announcement-meta {
   border-top: 1px solid rgba(255,255,255,0.2); /* Lighter border */
 }
-/* --- End Dark Mode Readability Fixes --- */
+
+/* --- ADDED: Dark Mode Attachment Styles --- */
+.dark-mode input[type="file"] {
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text-color);
+}
+.dark-mode input[type="file"]::file-selector-button {
+  background-color: var(--secondary-color);
+  color: #1a1a2e;
+  font-weight: 600;
+}
+.dark-mode #uploadStatus {
+  color: var(--primary-color);
+}
+.dark-mode .attachment-container {
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.dark-mode .attachment-link {
+  background-color: var(--secondary-color);
+  color: #f0f0f0;
+}
+.dark-mode .attachment-link:hover {
+  background-color: var(--primary-color);
+}
+/* --- ADDED: Dark Mode Image Style --- */
+.dark-mode .announcement-image {
+  border: 1px solid var(--glass-border);
+}
+/* --- End Dark Mode Styles --- */
+
+/* --- ADDED IMAGE STYLE (for manage modal) --- */
+.announcement-image {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin: 15px 0 10px 0;
+  border: 1px solid var(--glass-border);
+}
+
+.dark-mode .announcement-image {
+  border: 1px solid var(--glass-border);
+}

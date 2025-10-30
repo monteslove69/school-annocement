@@ -111,18 +111,16 @@ function showToast() {
   setTimeout(() => toast.classList.remove("show"), 3000);
 }
 
+// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 db.ref("announcements").on("value", (snapshot) => {
   const newData = [];
   snapshot.forEach((categorySnap) => {
     const categoryVal = categorySnap.val();
     if (categoryVal && categoryVal.title && categoryVal.message && categoryVal.category) {
-      // Handle edge case where announcements are directly under 'announcements' (less likely)
+      // Handle edge case (less likely)
       newData.push({
         id: categorySnap.key,
-        title: categoryVal.title || "Untitled",
-        message: categoryVal.message || "No message",
-        category: categoryVal.category || "Uncategorized",
-        timestamp: categoryVal.timestamp || new Date().toISOString()
+        ...categoryVal // Push all data from the snapshot
       });
     } else if (categoryVal && typeof categoryVal === 'object') {
       // Standard case: loop through each category
@@ -131,10 +129,7 @@ db.ref("announcements").on("value", (snapshot) => {
         if (post && post.title && post.message) {
           newData.push({
             id: postSnap.key,
-            title: post.title || "Untitled",
-            message: post.message || "No message",
-            category: post.category || "Uncategorized",
-            timestamp: post.timestamp || new Date().toISOString()
+            ...post // Push all data from the post (including downloadURL and isImage)
           });
         }
       });
@@ -173,6 +168,7 @@ function applyFilters(data, categoryFilter, searchTerm, showPinned) {
   return filtered;
 }
 
+// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 function displayAnnouncements(container, filteredData, categoryFilter, showPinnedOnly) {
   container.innerHTML = "";
   const pinnedIds = getPinnedAnnouncements();
@@ -191,22 +187,43 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
     container.appendChild(messageElement);
     return;
   }
+  
   filteredData.forEach((data) => {
     const div = document.createElement("div");
     
-    // --- ⬇️ THIS IS THE CHANGE ⬇️ ---
-    // This adds the category name (e.g., "category-urgent") as a class to the announcement
     div.className = `announcement category-${(data.category || 'unknown').toLowerCase()}`;
-    // --- ⬆️ END OF CHANGE ⬆️ ---
-
     div.dataset.announcement = JSON.stringify(data);
+    
     const isPinned = pinnedIds.includes(data.id);
+
+    // --- NEW: Logic to show image OR link ---
+    let attachmentHTML = '';
+    if (data.downloadURL) {
+      if (data.isImage) {
+        // If it's an image, create an <img> tag
+        attachmentHTML = `<img src="${data.downloadURL}" alt="${data.fileName || 'Announcement Image'}" class="announcement-image" onclick="event.stopPropagation()">`;
+      } else {
+        // Otherwise, create a link (for PDFs, etc.)
+        const fileName = data.fileName || 'View Attachment';
+        attachmentHTML = `
+          <div class="attachment-container">
+            <a href="${data.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link" onclick="event.stopPropagation()">
+              <i class="fas fa-paperclip"></i> ${fileName}
+            </a>
+          </div>
+        `;
+      }
+    }
+    // --- END OF NEW LOGIC ---
+
+    // --- UPDATED: Add the {attachmentHTML} variable below the time ---
     div.innerHTML = `
       <i class="fas fa-thumbtack pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'Unpin' : 'Pin'} announcement"></i>
       <div class="category">${data.category || "Unknown"}</div>
       <h3>${data.title || "No Title"}</h3>
       <p>${data.message || "No message provided."}</p>
       <div class="time">🕒 ${new Date(data.timestamp).toLocaleString()}</div>
+      ${attachmentHTML}
     `;
     container.appendChild(div);
   });
@@ -224,18 +241,37 @@ function updateLargePinButton(id) {
   }
 }
 
+// --- ⬇️ UPDATED THIS FUNCTION ⬇️ ---
 function openFullScreen(data) {
   currentAnnouncementId = data.id;
   wasSearchModalActive = searchOverlay.classList.contains('active');
+  
   largeTitle.textContent = data.title;
   largeMessage.textContent = data.message;
   largeCategory.textContent = data.category;
   largeTime.textContent = `Posted: ${new Date(data.timestamp).toLocaleString()}`;
-  
-  // --- ⬇️ THIS IS A SUPPORTING CHANGE ⬇️ ---
-  // This makes sure the category color is correct in the popup view too
   largeCategory.className = `category category-${(data.category || 'unknown').toLowerCase()}`;
-  // --- ⬆️ END OF CHANGE ⬆️ ---
+  
+  // --- NEW: Logic to show image OR link in modal ---
+  const largeAttachmentEl = document.getElementById('large-attachment');
+  if (data.downloadURL) {
+    if (data.isImage) {
+      // If it's an image, create an <img> tag for the modal
+      largeAttachmentEl.innerHTML = `<img src="${data.downloadURL}" alt="${data.fileName || 'Announcement Image'}" class="announcement-image-large">`;
+    } else {
+      // Otherwise, create a link (for PDFs, etc.)
+      const fileName = data.fileName || 'View Attachment';
+      largeAttachmentEl.innerHTML = `
+        <a href="${data.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link">
+          <i class="fas fa-paperclip"></i> ${fileName}
+        </a>
+      `;
+    }
+  } else {
+    // Clear it if no attachment
+    largeAttachmentEl.innerHTML = '';
+  }
+  // --- END OF NEW LOGIC ---
 
   updateLargePinButton(data.id);
   searchOverlay.classList.remove('active');
@@ -342,6 +378,12 @@ document.addEventListener('click', (e) => {
     }
     e.stopPropagation();
   } else {
+    // Check if the click was on the image or link
+    if (e.target.closest('.attachment-link') || e.target.closest('.announcement-image')) {
+      // Let the link or image click go through
+      return;
+    }
+    // Otherwise, open the modal
     try {
       const data = JSON.parse(announcementCard.dataset.announcement);
       openFullScreen(data);
@@ -461,24 +503,14 @@ if (loginBtn) {
             .catch((error) => {
                 const code = error.code || '';
                 let message = 'Login failed. Please try again.';
-
-                // --- ⬇️ THIS IS THE CORRECTED LOGIC ⬇️ ---
                 
-                // 1. Check for the new, generic "invalid login" error
-                // This ONE code is sent for *both* "user not found" AND "wrong password"
                 if (code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials') {
                     message = 'Invalid email or password. Please try again.';
-                    // Show error in the main login error element
                     loginErrorEl.textContent = message;
                     loginErrorEl.style.display = 'block';
-                    // Highlight both fields since we don't know which is wrong
                     emailEl.classList.add('error');
                     passwordEl.classList.add('error');
-                
-                // 2. Keep the other specific errors
                 } else if (code === 'auth/invalid-email') {
-                    // This error is for a *badly formatted* email (e.g., "test@test"),
-                    // not for a "user not found" email.
                     message = 'That email address is invalid.';
                     emailEl.classList.add('error');
                     emailErrorEl.textContent = message;
@@ -490,17 +522,13 @@ if (loginBtn) {
                     message = 'This user account has been disabled.';
                     loginErrorEl.textContent = message;
                     loginErrorEl.style.display = 'block';
-                
-                // 3. A fallback for any other *unexpected* error
                 } else {
-                    console.error("Firebase Login Error:", error); // Log the real error for you
+                    console.error("Firebase Login Error:", error); 
                     message = 'An unexpected error occurred. Please try again.';
                     loginErrorEl.textContent = message;
                     loginErrorEl.style.display = 'block';
                 }
                 
-                // --- ⬆️ END OF CORRECTED LOGIC ⬆️ ---
-
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = originalText;
             });

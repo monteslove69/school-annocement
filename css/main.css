@@ -356,6 +356,78 @@ input:checked + .slider:before {
   color: var(--secondary-color);
 }
 
+
+/* --- ⬇️ ADDED ATTACHMENT LINK STYLES ⬇️ --- */
+.attachment-container {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .attachment-container {
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.attachment-link:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .attachment-link {
+  background-color: var(--secondary-color);
+  color: #f0f0f0;
+}
+
+.dark-mode .attachment-link:hover {
+  background-color: var(--primary-color);
+}
+
+.attachment-link i {
+  font-size: 12px;
+}
+/* --- ⬆️ END OF ATTACHMENT STYLES ⬆️ --- */
+
+
+/* --- ⬇️ ADDED IMAGE STYLES ⬇️ --- */
+/* For the card on the main page */
+.announcement-image {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin-top: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+.dark-mode .announcement-image {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* For the image inside the modal */
+.announcement-image-large {
+  width: 100%;
+  max-height: 70vh; /* Don't let it be taller than the screen */
+  object-fit: contain; /* Keep the aspect ratio */
+  border-radius: 10px;
+  margin-top: 15px;
+}
+/* --- ⬆️ END OF IMAGE STYLES ⬆️ --- */
+
+
 #fullscreen-overlay {
   position: fixed;
   top: 0;
@@ -792,6 +864,29 @@ input:checked + .slider:before {
   color: #c8f5a1;
 }
 
+/* --- ADDED IMAGE STYLES --- */
+/* For the card on the main page */
+.announcement-image {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin-top: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  /* This stops the image from triggering the modal */
+  cursor: default; 
+}
+.dark-mode .announcement-image {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* For the image inside the modal */
+.announcement-image-large {
+  width: 100%;
+  max-height: 70vh; /* Don't let it be taller than the screen */
+  object-fit: contain; /* Keep the aspect ratio */
+  border-radius: 10px;
+  margin-top: 15px;
+}
 
 @media (min-width: 600px) {
   body {
