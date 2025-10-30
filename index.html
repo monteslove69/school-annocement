@@ -23,6 +23,21 @@
     <h1><i class="fas fa-signal"></i> School Notices Dashboard</h1>
   </header>
   
+  <nav class="nav-tabs">
+    <a href="#" class="nav-tab active">
+      <i class="fas fa-bullhorn"></i>
+      <span>Announcements</span>
+    </a>
+    <a href="#" id="open-search-btn" class="nav-tab">
+      <i class="fas fa-search"></i>
+      <span>Search</span>
+    </a>
+    <a href="#" id="open-login-btn" class="nav-tab">
+      <i class="fas fa-user-lock"></i>
+      <span>Login</span>
+    </a>
+  </nav>
+  
   <div class="filter-container">
     <select id="filter">
       <option value="all" style="text-align: center;">All Categories</option>
@@ -69,40 +84,27 @@
   </div>
 
   <div id="login-overlay">
-      <div id="login-content"
+      <div id="login-content">
+        <form>
           <span id="close-login-btn">&times;</span>
           <h1><i class="fas fa-user-lock"></i> SchoolConnect Admin Login</h1>
           <div class="login-box">
             <label for="email">Email</label>
-            <input type="email" id="email" placeholder="Admin Email" aria-describedby="emailError">
+            <input type="email" id="email" placeholder="Admin Email" aria-describedby="emailError" required>
             <div id="emailError" class="field-error" role="alert" aria-live="polite"></div>
         
             <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Password" aria-describedby="passwordError">
+            <input type="password" id="password" placeholder="Password" aria-describedby="passwordError" required>
             <div id="passwordError" class="field-error" role="alert" aria-live="polite"></div>
         
             <div id="loginSuccess" class="login-success" role="status" aria-live="polite"></div>
             <div id="loginError" class="login-error" role="alert" aria-live="polite"></div>
         
-            <button id="loginBtn"><i class="fas fa-sign-in-alt"></i> Login</button>
+            <button type="button" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Login</button>
           </div>
+        </form>
       </div>
   </div>
-
-  <nav class="nav-tabs">
-    <a href="#" class="nav-tab active">
-      <i class="fas fa-bullhorn"></i>
-      <span>Announcements</span>
-    </a>
-    <a href="#" id="open-search-btn" class="nav-tab">
-      <i class="fas fa-search"></i>
-      <span>Search</span>
-    </a>
-    <a href="#" id="open-login-btn" class="nav-tab">
-      <i class="fas fa-user-lock"></i>
-      <span>Login</span>
-    </a>
-  </nav>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
