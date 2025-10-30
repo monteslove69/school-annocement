@@ -272,13 +272,16 @@ input:checked + .slider:before {
   overflow: hidden;
 }
 
+/* --- ⬇️ REPLACEMENT CATEGORY CSS ⬇️ --- */
+
 .category {
   font-size: 13px;
   font-weight: bold;
-  background: rgba(0, 119, 255, 0.7);
+  /* This is now the default color (for General) */
+  background: rgba(0, 119, 255, 0.8); 
   color: white;
-  display: block; /* ✅ FIX: Change to block to force left alignment */
-  width: fit-content; /* ✅ FIX: Restrict width to content only */
+  display: block; 
+  width: fit-content; 
   padding: 5px 10px;
   border-radius: 8px;
   margin-bottom: 10px;
@@ -286,11 +289,41 @@ input:checked + .slider:before {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-left: 0;
   text-align: left;
+  transition: background-color 0.3s; /* Added a nice transition */
 }
-.announcement:nth-child(4n+1) .category { background: rgba(255, 80, 80, 0.8); }
-.announcement:nth-child(4n+2) .category { background: rgba(0, 190, 190, 0.8); }
-.announcement:nth-child(4n+3) .category { background: rgba(255, 180, 0, 0.8); }
-.announcement:nth-child(4n+4) .category { background: rgba(150, 80, 255, 0.8); }
+
+/* 1. Urgent (Red) - For high-priority alerts */
+.category-urgent .category {
+  background-color: rgba(220, 38, 38, 0.85); /* Strong Red */
+}
+
+/* 2. Exams (Amber/Orange) - For important dates/deadlines */
+.category-exams .category {
+  background-color: rgba(245, 158, 11, 0.85); /* Amber/Orange */
+}
+
+/* 3. Events (Purple) - For special activities */
+.category-events .category {
+  background-color: rgba(139, 92, 246, 0.85); /* Bright Purple */
+}
+
+/* 4. Reminders (Teal) - For helpful info */
+.category-reminders .category {
+  background-color: rgba(13, 148, 136, 0.85); /* Teal */
+}
+
+/* 5. General (Default Blue) */
+.category-general .category {
+  background-color: rgba(0, 119, 255, 0.8); /* Default Blue */
+}
+
+/* Fallback for any unknown category */
+.category-unknown .category {
+  background-color: #666; /* Grey */
+}
+
+/* --- ⬆️ END OF REPLACEMENT CSS ⬆️ --- */
+
 .time {
   font-size: 12px;
   color: var(--time-color);

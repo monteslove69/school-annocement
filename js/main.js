@@ -193,7 +193,12 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
   }
   filteredData.forEach((data) => {
     const div = document.createElement("div");
-    div.className = "announcement";
+    
+    // --- ⬇️ THIS IS THE CHANGE ⬇️ ---
+    // This adds the category name (e.g., "category-urgent") as a class to the announcement
+    div.className = `announcement category-${(data.category || 'unknown').toLowerCase()}`;
+    // --- ⬆️ END OF CHANGE ⬆️ ---
+
     div.dataset.announcement = JSON.stringify(data);
     const isPinned = pinnedIds.includes(data.id);
     div.innerHTML = `
@@ -226,7 +231,12 @@ function openFullScreen(data) {
   largeMessage.textContent = data.message;
   largeCategory.textContent = data.category;
   largeTime.textContent = `Posted: ${new Date(data.timestamp).toLocaleString()}`;
-  largeCategory.className = 'category';
+  
+  // --- ⬇️ THIS IS A SUPPORTING CHANGE ⬇️ ---
+  // This makes sure the category color is correct in the popup view too
+  largeCategory.className = `category category-${(data.category || 'unknown').toLowerCase()}`;
+  // --- ⬆️ END OF CHANGE ⬆️ ---
+
   updateLargePinButton(data.id);
   searchOverlay.classList.remove('active');
   loginOverlay.classList.remove('active'); // Close login if open
