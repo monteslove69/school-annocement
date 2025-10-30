@@ -451,29 +451,46 @@ if (loginBtn) {
             .catch((error) => {
                 const code = error.code || '';
                 let message = 'Login failed. Please try again.';
-                if (code.indexOf('user-not-found') !== -1 || code.indexOf('no-such-user') !== -1) {
-                    message = "No account found for that email.";
+
+                // --- ⬇️ THIS IS THE CORRECTED LOGIC ⬇️ ---
+                
+                // 1. Check for the new, generic "invalid login" error
+                // This ONE code is sent for *both* "user not found" AND "wrong password"
+                if (code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials') {
+                    message = 'Invalid email or password. Please try again.';
+                    // Show error in the main login error element
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                    // Highlight both fields since we don't know which is wrong
                     emailEl.classList.add('error');
-                    emailErrorEl.textContent = message;
-                } else if (code.indexOf('wrong-password') !== -1) {
-                    message = 'Incorrect password. Please try again.';
                     passwordEl.classList.add('error');
-                    passwordErrorEl.textContent = message;
-                } else if (code.indexOf('invalid-email') !== -1) {
+                
+                // 2. Keep the other specific errors
+                } else if (code === 'auth/invalid-email') {
+                    // This error is for a *badly formatted* email (e.g., "test@test"),
+                    // not for a "user not found" email.
                     message = 'That email address is invalid.';
                     emailEl.classList.add('error');
                     emailErrorEl.textContent = message;
-                } else if (code.indexOf('too-many-requests') !== -1) {
+                } else if (code === 'auth/too-many-requests') {
                     message = 'Too many failed attempts. Please try again later.';
-                } else if (code.indexOf('user-disabled') !== -1) {
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                } else if (code === 'auth/user-disabled') {
                     message = 'This user account has been disabled.';
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                
+                // 3. A fallback for any other *unexpected* error
                 } else {
-                    if (error.message) message = error.message;
-                }
-                if (loginErrorEl && !(emailErrorEl && emailErrorEl.textContent) && !(passwordErrorEl && passwordErrorEl.textContent)) {
+                    console.error("Firebase Login Error:", error); // Log the real error for you
+                    message = 'An unexpected error occurred. Please try again.';
                     loginErrorEl.textContent = message;
                     loginErrorEl.style.display = 'block';
                 }
+                
+                // --- ⬆️ END OF CORRECTED LOGIC ⬆️ ---
+
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = originalText;
             });
