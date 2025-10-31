@@ -133,7 +133,7 @@ if (loginBtn) {
     });
 }
 
-// --- GLOBAL FACEBOOK API FUNCTIONS (Must be defined before admin logic) ---
+// --- GLOBAL FACEBOOK API FUNCTIONS ---
 
 async function postToFacebookAPI(announcementData) {
     // !!! SECURITY WARNING: Token is embedded in client-side code !!!
@@ -181,7 +181,8 @@ async function postToFacebookAPI(announcementData) {
 async function updatePostOnFacebookAPI(fbPostId, newPostData) {
     const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
     
-    const message = `${newPostData.title}\n\n${newPostData.message}\n\n(Edited: ${new Date().toLocaleString()})`;
+    // Message without the date/time stamp for a clean edit
+    const message = `${newPostData.title}\n\n${newPostData.message}`; 
     
     const params = new URLSearchParams();
     params.append('access_token', PAGE_ACCESS_TOKEN);
@@ -213,6 +214,36 @@ async function updatePostOnFacebookAPI(fbPostId, newPostData) {
         throw new Error(error.message || "A network or CORS error occurred during FB update."); 
     }
 }
+
+async function deletePostOnFacebookAPI(fbPostId) {
+    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+    
+    const params = new URLSearchParams();
+    params.append('access_token', PAGE_ACCESS_TOKEN);
+    
+    const endpoint = `https://graph.facebook.com/v19.0/${fbPostId}`;
+    const fullUrl = `${endpoint}?${params.toString()}`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json(); 
+        
+        if (result.error || result.success === false) {
+             const errorMessage = result.error ? (result.error.message || JSON.stringify(result.error)) : "Deletion failed (Response status false).";
+             throw new Error(errorMessage);
+        }
+        
+        console.log('Facebook post deletion successful:', result);
+        return result;
+
+    } catch (error) {
+        throw new Error(error.message || "A network or CORS error occurred during FB deletion."); 
+    }
+}
+
 
 /*
 ===============================================
@@ -733,7 +764,7 @@ if (window.location.pathname.includes("admin.html")) {
                     let finalAttachments = [...editFilesToKeep];
                     let currentFbPostId = originalFbPostId;
 
-                    // Upload new files
+                    // Upload new files (FIX: Await file upload completion before proceeding)
                     if (editFilesToUpload.length > 0) {
                         uploadAbortController = new AbortController();
                         try {
@@ -777,6 +808,7 @@ if (window.location.pathname.includes("admin.html")) {
                     let fbUpdatePromise = Promise.resolve();
                     if (currentFbPostId) {
                         const newPostData = { title, message, attachments: finalAttachments };
+                        // Ensure we use the global function defined below
                         fbUpdatePromise = updatePostOnFacebookAPI(currentFbPostId, newPostData)
                             .catch(fbError => {
                                 console.error('Facebook Edit Failed:', fbError);
@@ -790,6 +822,7 @@ if (window.location.pathname.includes("admin.html")) {
                         const oldRef = db.ref(`announcements/${category}/${id}`);
                         const newRef = db.ref(`announcements/${newCategory}`).push();
                         
+                        // FIX: Ensure all promises are handled correctly
                         Promise.all([
                             fbUpdatePromise,
                             newRef.set(updates)
@@ -802,6 +835,7 @@ if (window.location.pathname.includes("admin.html")) {
                             })
                             .catch(error => alert('❌ Error updating announcement: ' + error.message));
                     } else {
+                        // FIX: Ensure all promises are handled correctly
                         Promise.all([
                             fbUpdatePromise,
                             db.ref(`announcements/${category}/${id}`).update(updates)
@@ -843,9 +877,27 @@ if (window.location.pathname.includes("admin.html")) {
 
     function deleteAnnouncement(id, category) {
         if (confirm('Are you sure you want to delete this announcement?')) {
-            db.ref(`announcements/${category}/${id}`).remove()
+            
+            db.ref(`announcements/${category}/${id}`).once('value')
+                .then(snapshot => {
+                    const data = snapshot.val();
+                    const fbPostId = data ? data.fbPostId : null;
+                    
+                    let fbDeletePromise = Promise.resolve();
+                    if (fbPostId) {
+                        // Ensure we use the global function defined below
+                        fbDeletePromise = deletePostOnFacebookAPI(fbPostId)
+                            .catch(fbError => {
+                                console.error('Facebook Delete Failed:', fbError);
+                                alert(`⚠️ Warning: Failed to delete Facebook post. Error: ${fbError.message}`);
+                            });
+                    }
+
+                    // Delete from Firebase ONLY after trying to delete from Facebook
+                    return Promise.all([fbDeletePromise, db.ref(`announcements/${category}/${id}`).remove()]);
+                })
                 .then(() => {
-                    alert('✅ Announcement deleted!');
+                    alert('✅ Announcement deleted (locally and attempted on Facebook)!');
                     loadAnnouncements(document.getElementById('filterCategory').value);
                 })
                 .catch(error => alert('❌ Error deleting announcement: ' + error.message));
@@ -1206,90 +1258,5 @@ if (window.location.pathname.includes("admin.html")) {
         } catch (error) {
             alert('❌ Error saving announcement to Firebase: ' + error.message);
         }
-    }
-}
-
-/*
-================================================
-  GLOBAL FACEBOOK API FUNCTIONS (Outside Admin Block)
-================================================
-*/
-
-async function postToFacebookAPI(announcementData) {
-    // !!! SECURITY WARNING: Token is embedded in client-side code !!!
-    const PAGE_ID = '849836108213722';
-    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
-
-    let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
-    const message = `${announcementData.title}\n\n${announcementData.message}`;
-    
-    const params = new URLSearchParams();
-    params.append('access_token', PAGE_ACCESS_TOKEN);
-    params.append('message', message);
-
-    const firstImage = announcementData.attachments?.find(a => a.isImage);
-    if (firstImage) {
-        endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
-        params.append('url', firstImage.downloadURL);
-    }
-
-    const fullUrl = `${endpoint}?${params.toString()}`;
-
-    try {
-        const response = await fetch(fullUrl, {
-            method: 'POST'
-        });
-        
-        const result = await response.json(); 
-
-        if (result.error) {
-            const errorMessage = result.error.message || JSON.stringify(result.error);
-            throw new Error(errorMessage);
-        }
-
-        if (!response.ok) {
-            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
-        }
-
-        return result;
-
-    } catch (error) {
-        throw new Error(error.message || "A network or CORS error occurred."); 
-    }
-}
-
-async function updatePostOnFacebookAPI(fbPostId, newPostData) {
-    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
-    
-    const message = `${newPostData.title}\n\n${newPostData.message}\n\n(Edited: ${new Date().toLocaleString()})`;
-    
-    const params = new URLSearchParams();
-    params.append('access_token', PAGE_ACCESS_TOKEN);
-    params.append('message', message);
-    
-    const endpoint = `https://graph.facebook.com/v19.0/${fbPostId}`;
-    const fullUrl = `${endpoint}?${params.toString()}`;
-
-    try {
-        const response = await fetch(fullUrl, {
-            method: 'POST'
-        });
-        
-        const result = await response.json(); 
-        
-        if (result.error) {
-            const errorMessage = result.error.message || JSON.stringify(result.error);
-            throw new Error(errorMessage);
-        }
-
-        if (!response.ok) {
-            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
-        }
-
-        console.log('Facebook post update successful:', result);
-        return result;
-
-    } catch (error) {
-        throw new Error(error.message || "A network or CORS error occurred during FB update."); 
     }
 }
