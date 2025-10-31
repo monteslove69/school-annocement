@@ -109,6 +109,20 @@
             <option value="Reminders">Reminders</option>
             <option value="Urgent">Urgent</option>
           </select>
+
+          <div class="attachment-editor">
+            <label>Manage Attachments</label>
+            
+            <div id="editFilePreviewContainer" class="file-preview-grid"></div>
+
+            <div class="file-input-header">
+              <label for="editFileUpload" class="file-upload-label"><i class="fas fa-plus"></i> Add More Files</label>
+            </div>
+            <input type="file" id="editFileUpload" multiple>
+
+            <div id="editNewFilePreviewContainer" class="file-preview-grid"></div>
+            <div id="editUploadStatus" style="font-size: 12px; margin-top: 5px;"></div>
+          </div>
           <div class="edit-actions">
             <button id="updateBtn" class="update-btn"><i class="fas fa-save"></i> Update Announcement</button>
             <button id="cancelEditBtn" class="cancel-btn"><i class="fas fa-times"></i> Cancel</button>

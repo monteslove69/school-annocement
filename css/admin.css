@@ -490,7 +490,6 @@ button {
 }
 
 
-/* --- UPDATED ATTACHMENT UPLOAD STYLES --- */
 .file-input-header {
   display: flex;
   justify-content: space-between;
@@ -534,7 +533,6 @@ input[type="file"] {
   font-weight: 500;
 }
 
-/* --- UPDATED FILE PREVIEW CONTAINER STYLES --- */
 #filePreviewContainer {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -598,7 +596,6 @@ input[type="file"] {
   box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-/* --- ATTACHMENTLINK STYLES (for manage modal) --- */
 .attachment-container {
   margin-top: 15px;
   padding-top: 10px;
@@ -631,7 +628,6 @@ input[type="file"] {
   font-size: 12px;
 }
 
-/* --- IMAGE STYLES (for manage modal) --- */
 .attachment-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -657,6 +653,104 @@ input[type="file"] {
   border-radius: 10px;
   border: 1px solid var(--glass-border);
 }
+
+
+/* --- NEW STYLES FOR EDIT MODAL ATTACHMENTS --- */
+.attachment-editor {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--glass-border);
+}
+.attachment-editor > label {
+  display: block;
+  font-weight: 600;
+  color: var(--secondary-color);
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.file-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+}
+/* Make sure new file preview has a little space */
+#editNewFilePreviewContainer {
+  margin-top: 10px;
+}
+
+.edit-form .file-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.edit-form .file-preview img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+.edit-form .file-preview-icon {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: var(--secondary-color);
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+.edit-form .file-preview span {
+  font-size: 11px;
+  color: var(--secondary-color);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  text-align: center;
+  margin-top: 4px;
+}
+.edit-form .file-preview-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--error-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 20px;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.edit-form .file-upload-label {
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box; /* Ensure padding doesn't break layout */
+  margin-top: 5px;
+}
+#editUploadStatus {
+  color: var(--secondary-color);
+  font-weight: 500;
+}
+/* --- END OF NEW EDIT MODAL STYLES --- */
 
 
 @media (max-width: 600px) {
@@ -864,5 +958,16 @@ input:checked + .slider:before {
   color: var(--primary-color);
 }
 .dark-mode .file-preview span {
+  color: var(--primary-color);
+}
+
+/* --- DARK MODE FOR EDIT MODAL --- */
+.dark-mode .attachment-editor label {
+  color: var(--primary-color);
+}
+.dark-mode .file-preview-grid {
+  background: rgba(0, 0, 0, 0.2);
+}
+.dark-mode #editUploadStatus {
   color: var(--primary-color);
 }

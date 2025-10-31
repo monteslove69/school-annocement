@@ -140,8 +140,13 @@ if (loginBtn) {
 */
 if (window.location.pathname.includes("admin.html")) {
 
-    let filesToUpload = []; // Holds all files to be uploaded
-    let uploadAbortController = null; // Controller to cancel uploads
+    let filesToUpload = []; // Holds all files for a NEW post
+    let uploadAbortController = null; 
+    
+    // --- NEW: State for the EDIT modal ---
+    let editFilesToKeep = [];
+    let editFilesToUpload = [];
+    // -------------------------------------
 
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const body = document.body;
@@ -335,7 +340,7 @@ if (window.location.pathname.includes("admin.html")) {
         cancelUploadBtn.addEventListener('click', (e) => {
             e.preventDefault();
             if (uploadAbortController) {
-                uploadAbortController.abort(); // Send the cancel signal
+                uploadAbortController.abort(); 
             }
         });
     }
@@ -443,7 +448,7 @@ if (window.location.pathname.includes("admin.html")) {
                                      <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
                                    </div>`).join('');
                 } else { // 3 or more
-                    imagesHTML = images.slice(0, 2) // Get first two
+                    imagesHTML = images.slice(0, 2) 
                         .map(att => `<div class="announcement-image-wrapper">
                                        <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
                                      </div>`).join('');
@@ -493,11 +498,13 @@ if (window.location.pathname.includes("admin.html")) {
         announcementsList.appendChild(div);
     }
 
+    // --- ⬇️ THIS FUNCTION IS HEAVILY UPDATED ⬇️ ---
     function editAnnouncement(id, category) {
         db.ref(`announcements/${category}/${id}`).once('value')
             .then((snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
+                
                 const editModal = document.getElementById('editModal');
                 const editTitle = document.getElementById('editTitle');
                 const editMessage = document.getElementById('editMessage');
@@ -505,20 +512,115 @@ if (window.location.pathname.includes("admin.html")) {
                 const updateBtn = document.getElementById('updateBtn');
                 const closeEditModal = document.getElementById('closeEditModal');
                 const cancelEditBtn = document.getElementById('cancelEditBtn');
+                
+                // New elements for file editing
+                const editFilePreview = document.getElementById('editFilePreviewContainer');
+                const editNewFilePreview = document.getElementById('editNewFilePreviewContainer');
+                const editFileUpload = document.getElementById('editFileUpload');
+                const editUploadStatus = document.getElementById('editUploadStatus');
 
-                if (!editModal || !editTitle || !editMessage || !editCategory || !updateBtn || !closeEditModal || !cancelEditBtn) {
+                if (!editModal || !editTitle || !editMessage || !editCategory || !updateBtn || !closeEditModal || !cancelEditBtn || !editFilePreview || !editNewFilePreview || !editFileUpload) {
                    console.error("Edit modal elements not found");
                    return; 
                 }
 
+                // Reset state
                 editTitle.value = data.title;
                 editMessage.value = data.message;
                 editCategory.value = data.category;
+                editFilesToKeep = data.attachments ? [...data.attachments] : [];
+                editFilesToUpload = [];
+                editUploadStatus.textContent = '';
+
+                // Function to render previews
+                const renderEditFilePreviews = () => {
+                    editFilePreview.innerHTML = '';
+                    editNewFilePreview.innerHTML = '';
+
+                    // 1. Render existing files (editFilesToKeep)
+                    editFilesToKeep.forEach((file, index) => {
+                        const previewWrapper = document.createElement('div');
+                        previewWrapper.className = 'file-preview';
+                        
+                        let previewElement;
+                        if (file.isImage) {
+                            previewElement = document.createElement('img');
+                            previewElement.src = file.downloadURL;
+                        } else {
+                            previewElement = document.createElement('div');
+                            previewElement.className = 'file-preview-icon';
+                            previewElement.innerHTML = `<i class="fas fa-file-alt"></i>`;
+                        }
+                        
+                        const fileName = document.createElement('span');
+                        fileName.textContent = file.fileName;
+
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'file-preview-remove';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.onclick = () => {
+                            editFilesToKeep.splice(index, 1); 
+                            renderEditFilePreviews(); 
+                        };
+
+                        previewWrapper.appendChild(previewElement);
+                        previewWrapper.appendChild(fileName);
+                        previewWrapper.appendChild(removeBtn);
+                        editFilePreview.appendChild(previewWrapper);
+                    });
+
+                    // 2. Render new files to upload (editFilesToUpload)
+                    editFilesToUpload.forEach((file, index) => {
+                        const previewWrapper = document.createElement('div');
+                        previewWrapper.className = 'file-preview';
+                        
+                        let previewElement;
+                        if (file.type.startsWith('image/')) {
+                            previewElement = document.createElement('img');
+                            previewElement.src = URL.createObjectURL(file);
+                        } else {
+                            previewElement = document.createElement('div');
+                            previewElement.className = 'file-preview-icon';
+                            previewElement.innerHTML = `<i class="fas fa-file-alt"></i>`;
+                        }
+                        
+                        const fileName = document.createElement('span');
+                        fileName.textContent = file.name;
+
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'file-preview-remove';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.onclick = () => {
+                            editFilesToUpload.splice(index, 1); 
+                            renderEditFilePreviews(); 
+                        };
+
+                        previewWrapper.appendChild(previewElement);
+                        previewWrapper.appendChild(fileName);
+                        previewWrapper.appendChild(removeBtn);
+                        editNewFilePreview.appendChild(previewWrapper);
+                    });
+                };
                 
+                renderEditFilePreviews(); // Initial render
+
+                // Add listener for the "Add More Files" input
+                const newFileUploadListener = () => {
+                    Array.from(editFileUpload.files).forEach(file => {
+                        if (!editFilesToUpload.some(f => f.name === file.name && f.size === file.size)) {
+                            editFilesToUpload.push(file);
+                        }
+                    });
+                    renderEditFilePreviews();
+                    editFileUpload.value = null; // Clear input
+                };
+                editFileUpload.onchange = newFileUploadListener;
+
                 editModal.classList.add('show');
                 
                 const closeEditForm = () => {
                     editModal.classList.remove('show');
+                    editFileUpload.onchange = null; // Clean up listener
                 };
                 
                 closeEditModal.onclick = closeEditForm;
@@ -539,7 +641,7 @@ if (window.location.pathname.includes("admin.html")) {
                 };
                 document.addEventListener('keydown', escHandler);
                 
-                const handleUpdate = () => {
+                const handleUpdate = async () => {
                     const title = editTitle.value.trim();
                     const message = editMessage.value.trim();
                     const newCategory = editCategory.value;
@@ -548,13 +650,49 @@ if (window.location.pathname.includes("admin.html")) {
                         return;
                     }
                     
+                    updateBtn.disabled = true;
+                    updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    editUploadStatus.textContent = '';
+                    
+                    let finalAttachments = [...editFilesToKeep]; // Start with the files we kept
+
+                    // Upload new files
+                    if (editFilesToUpload.length > 0) {
+                        uploadAbortController = new AbortController();
+                        try {
+                            let newUploadedFiles = [];
+                            for (let i = 0; i < editFilesToUpload.length; i++) {
+                                const file = editFilesToUpload[i];
+                                editUploadStatus.textContent = `Uploading new file ${i + 1} of ${editFilesToUpload.length}...`;
+                                const result = await uploadFileToCloudinary(file, uploadAbortController.signal);
+                                newUploadedFiles.push(result);
+                            }
+                            finalAttachments = [...editFilesToKeep, ...newUploadedFiles]; // Combine lists
+                            editUploadStatus.textContent = 'Uploads complete!';
+                        } catch (error) {
+                            if (error.name === 'AbortError') {
+                                alert('Upload canceled.');
+                            } else {
+                                alert('❌ Error uploading new files: ' + error.message);
+                            }
+                            updateBtn.disabled = false;
+                            updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Announcement';
+                            editUploadStatus.textContent = 'Upload failed.';
+                            uploadAbortController = null;
+                            return;
+                        }
+                    }
+
+                    uploadAbortController = null;
+                    editUploadStatus.textContent = 'Saving...';
+                    
                     const updates = {
                         title,
                         message,
                         category: newCategory,
                         timestamp: data.timestamp,
                         lastEdited: new Date().toISOString(),
-                        attachments: data.attachments || null
+                        attachments: finalAttachments // Save the final combined array
                     };
 
                     if (newCategory !== category) {
@@ -577,6 +715,9 @@ if (window.location.pathname.includes("admin.html")) {
                             })
                             .catch(error => alert('❌ Error updating announcement: ' + error.message));
                     }
+
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Announcement';
                 };
                 
                 updateBtn.onclick = handleUpdate;
@@ -587,6 +728,7 @@ if (window.location.pathname.includes("admin.html")) {
                     closeEditModal.onclick = null;
                     cancelEditBtn.onclick = null;
                     editModal.onclick = null;
+                    editFileUpload.onchange = null; // Clean up listener
                 };
                 
                 [closeEditModal, cancelEditBtn].forEach(btn => {
@@ -758,11 +900,11 @@ if (window.location.pathname.includes("admin.html")) {
                 .catch(err => {
                     console.warn('Scheduled processor error:', err.message || err);
                 });
-        };
+    };
 
-        run();
-        _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
-        console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
+    run();
+    _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
+    console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
     }
 
     async function uploadFileToCloudinary(file, signal) {
@@ -776,7 +918,7 @@ if (window.location.pathname.includes("admin.html")) {
         const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
             method: 'POST',
             body: formData,
-            signal: signal // Pass the abort signal to fetch
+            signal: signal 
         });
 
         const data = await response.json();
@@ -793,6 +935,9 @@ if (window.location.pathname.includes("admin.html")) {
     }
 
     function addPostButtonListener(postBtn) {
+        const filePreviewContainer = document.getElementById('filePreviewContainer');
+        const clearFilesBtn = document.getElementById('clearFilesBtn');
+    
         postBtn.addEventListener('click', async () => {
             
             const title = document.getElementById('title').value.trim();
@@ -821,8 +966,8 @@ if (window.location.pathname.includes("admin.html")) {
             };
 
             if (filesToUpload.length > 0) {
-                uploadAbortController = new AbortController(); // Create new controller
-                cancelUploadBtn.style.display = 'block'; // Show cancel button
+                uploadAbortController = new AbortController(); 
+                cancelUploadBtn.style.display = 'block'; 
                 
                 try {
                     let attachments = [];
@@ -861,6 +1006,11 @@ if (window.location.pathname.includes("admin.html")) {
             uploadStatus.textContent = '';
             cancelUploadBtn.style.display = 'none';
             uploadAbortController = null;
+
+            // Clear global state
+            filesToUpload = []; 
+            if (filePreviewContainer) filePreviewContainer.innerHTML = ''; 
+            if (clearFilesBtn) clearFilesBtn.style.display = 'none'; 
         });
     }
 
