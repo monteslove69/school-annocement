@@ -341,7 +341,6 @@ input:checked + .slider:before {
 }
 
 
-/* --- ATTACHMENT LINK STYLES --- */
 .attachment-container {
   margin-top: 15px;
   padding-top: 10px;
@@ -384,7 +383,6 @@ input:checked + .slider:before {
   font-size: 12px;
 }
 
-/* --- NEW "SMART GALLERY" STYLES --- */
 .attachments-grid {
   display: grid;
   gap: 8px;
@@ -395,24 +393,18 @@ input:checked + .slider:before {
 .dark-mode .attachments-grid {
   border-top-color: rgba(255, 255, 255, 0.2);
 }
-
-/* 1 Image: Full Width */
 .attachments-grid.grid-count-1 {
   grid-template-columns: 1fr;
 }
 .attachments-grid.grid-count-1 .announcement-image-wrapper {
   padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
 }
-
-/* 2 Images: 50/50 */
 .attachments-grid.grid-count-2 {
   grid-template-columns: 1fr 1fr;
 }
 .attachments-grid.grid-count-2 .announcement-image-wrapper {
   padding-bottom: 75%; /* 4:3 Aspect Ratio */
 }
-
-/* 3+ Images: 3 Columns */
 .attachments-grid.grid-count-3-plus {
   grid-template-columns: 1fr 1fr 1fr;
 }
@@ -426,7 +418,7 @@ input:checked + .slider:before {
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  cursor: default;
+  cursor: pointer;
 }
 .announcement-image {
   position: absolute;
@@ -445,7 +437,6 @@ input:checked + .slider:before {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* "+ More" Watermark Overlay */
 .more-images-wrapper {
   position: relative;
 }
@@ -464,14 +455,13 @@ input:checked + .slider:before {
   font-weight: bold;
   opacity: 1;
   z-index: 2;
-  cursor: default;
+  cursor: pointer;
   transition: opacity 0.3s;
 }
 .announcement:not(:hover) .more-images-overlay {
   opacity: 0.8;
 }
 
-/* For the image inside the modal */
 .announcement-image-large {
   width: 100%;
   max-height: 70vh; 
@@ -479,7 +469,6 @@ input:checked + .slider:before {
   border-radius: 10px;
   margin-top: 15px;
 }
-/* --- END OF SMART GALLERY STYLES --- */
 
 
 #fullscreen-overlay {
@@ -492,7 +481,7 @@ input:checked + .slider:before {
   z-index: 2000;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: center; 
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -912,7 +901,6 @@ input:checked + .slider:before {
   background-color: #2a470c;
   color: #c8f5a1;
 }
-
 
 @media (min-width: 600px) {
   body {
