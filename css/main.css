@@ -197,14 +197,16 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
+/* --- SCROLLING FIX --- */
 #announcements, #search-results-announcements {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+  /* REMOVED max-height and overflow-y */
 }
+/* --- END OF FIX --- */
+
 #search-results-announcements {
   padding-bottom: 20px;
 }
@@ -289,22 +291,28 @@ input:checked + .slider:before {
   transition: background-color 0.3s;
 }
 
-.category-urgent .category {
+.category-urgent .category,
+.category.category-urgent {
   background-color: rgba(220, 38, 38, 0.85);
 }
-.category-exams .category {
+.category-exams .category,
+.category.category-exams {
   background-color: rgba(245, 158, 11, 0.85);
 }
-.category-events .category {
+.category-events .category,
+.category.category-events {
   background-color: rgba(139, 92, 246, 0.85);
 }
-.category-reminders .category {
+.category-reminders .category,
+.category.category-reminders {
   background-color: rgba(13, 148, 136, 0.85);
 }
-.category-general .category {
+.category-general .category,
+.category.category-general {
   background-color: rgba(0, 119, 255, 0.8);
 }
-.category-unknown .category {
+.category-unknown .category,
+.category.category-unknown {
   background-color: #666;
 }
 
@@ -468,6 +476,7 @@ input:checked + .slider:before {
   object-fit: contain; 
   border-radius: 10px;
   margin-top: 15px;
+  cursor: pointer; 
 }
 
 
