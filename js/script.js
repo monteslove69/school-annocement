@@ -836,7 +836,20 @@ if (window.location.pathname.includes("admin.html")) {
                 postData.timestamp = new Date().toISOString(); 
                 postData.scheduledFrom = data.scheduledAt; 
 
-                return postRef.set(postData).then(() => ref.remove());
+                // Chain the Facebook post if needed
+                const p = postRef.set(postData)
+                    .then(async () => {
+                        if (postData.postToFacebook) {
+                            try {
+                                await postToFacebookAPI(postData);
+                                console.log(`Scheduled post ${key} also posted to Facebook.`);
+                            } catch (fbError) {
+                                console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
+                            }
+                        }
+                        return ref.remove(); // Remove scheduled item regardless of FB success
+                    });
+                return p;
             })
             .then(() => {
                 alert('✅ Scheduled announcement posted now.');
@@ -880,7 +893,21 @@ if (window.location.pathname.includes("admin.html")) {
                         postData.timestamp = new Date().toISOString();
                         postData.scheduledFrom = data.scheduledAt;
 
-                        const p = postRef.set(postData).then(() => db.ref('scheduled_announcements/' + key).remove());
+                        // NEW LOGIC: Chain Facebook post
+                        const p = postRef.set(postData)
+                            .then(async () => {
+                                // Check flag from the saved post data
+                                if (postData.postToFacebook) {
+                                    try {
+                                        await postToFacebookAPI(postData);
+                                        console.log(`Scheduled post ${key} also posted to Facebook.`);
+                                    } catch (fbError) {
+                                        console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
+                                    }
+                                }
+                                // Now remove the scheduled item
+                                return db.ref('scheduled_announcements/' + key).remove();
+                        });
 
                         tasks.push(p); 
                     });
@@ -947,6 +974,7 @@ if (window.location.pathname.includes("admin.html")) {
             const scheduleAt = document.getElementById('scheduleAt').value;
             const uploadStatus = document.getElementById('uploadStatus');
             const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+            const postToFacebook = document.getElementById('postToFacebookToggle').checked; // GET THE VALUE
 
             if (!title || !message || !category) {
                 alert('⚠️ Please fill in all fields (Title, Message, and Category)!');
@@ -962,7 +990,8 @@ if (window.location.pathname.includes("admin.html")) {
                 message: message,
                 category: category,
                 timestamp: new Date().toISOString(),
-                attachments: [] 
+                attachments: [],
+                postToFacebook: postToFacebook // <-- ADDED THIS LINE
             };
 
             if (filesToUpload.length > 0) {
@@ -1040,13 +1069,30 @@ if (window.location.pathname.includes("admin.html")) {
                 alert('✅ Announcement scheduled successfully!');
                 
             } else {
+                // 1. Save to Firebase
                 await db.ref(`announcements/${dataToSave.category}`).push(dataToSave);
-                alert('✅ Announcement posted successfully!');
+                
+                // 2. Check if we also need to post to Facebook
+                if (dataToSave.postToFacebook) {
+                    try {
+                        // 3. Await the Facebook post
+                        await postToFacebookAPI(dataToSave);
+                        alert('✅ Announcement posted successfully to Firebase and Facebook!');
+                    } catch (fbError) {
+                        console.error('Facebook post failed:', fbError);
+                        alert(`✅ Announcement posted to Firebase, but FAILED to post to Facebook: ${fbError.message}`);
+                    }
+                } else {
+                    // 3. Just alert for Firebase success
+                    alert('✅ Announcement posted successfully to Firebase!');
+                }
             }
 
+            // Clear form fields
             document.getElementById('title').value = '';
             document.getElementById('message').value = '';
             document.getElementById('category').value = '';
+            document.getElementById('postToFacebookToggle').checked = false; // <-- ADDED THIS
             fileUpload.value = null; 
             document.getElementById('scheduleToggle').checked = false;
             document.getElementById('scheduleAt').value = '';
@@ -1065,4 +1111,67 @@ if (window.location.pathname.includes("admin.html")) {
             alert('❌ Error saving announcement to Firebase: ' + error.message);
         }
     }
-}
+
+    //
+    // --- THIS IS THE FINAL FUNCTION WITH THE NEW TOKEN ---
+    //
+    async function postToFacebookAPI(announcementData) {
+        // -------------------------------------------------------------------
+        // !!! SECURITY WARNING !!!
+        // This token is embedded in client-side code and is INSECURE.
+        // It is recommended to use a server-side component (like Firebase 
+        // Functions) to hide this token for production applications.
+        // -------------------------------------------------------------------
+        const PAGE_ID = '849836108213722'; // <-- YOUR PAGE ID
+        
+        // --- FINAL LONG-LIVED PAGE TOKEN ---
+        const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+
+        let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
+        const message = `${announcementData.title}\n\n${announcementData.message}`;
+        
+        const params = new URLSearchParams();
+        params.append('access_token', PAGE_ACCESS_TOKEN);
+        params.append('message', message);
+
+        // Check for an image and use it if one exists
+        const firstImage = announcementData.attachments?.find(a => a.isImage);
+        if (firstImage) {
+            // Use the /photos endpoint if there's an image
+            endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
+            params.append('url', firstImage.downloadURL);
+        }
+
+        const fullUrl = `${endpoint}?${params.toString()}`;
+
+        try {
+            const response = await fetch(fullUrl, {
+                method: 'POST'
+            });
+            
+            const result = await response.json(); // Get the JSON response from Facebook
+
+            // Check for ANY error structure in the JSON
+            if (result.error) {
+                // Use the error message if it exists, otherwise stringify the whole error object
+                const errorMessage = result.error.message || JSON.stringify(result.error);
+                throw new Error(errorMessage);
+            }
+
+            // Handle non-200 responses that might not have a 'result.error'
+            if (!response.ok) {
+                throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
+            }
+
+            console.log('Facebook post successful:', result);
+            return result;
+
+        } catch (error) {
+            // This catches fetch failures (CORS, network) or JSON parse failures
+            console.error("Error during Facebook fetch:", error);
+            // Re-throw the error so it has a .message property for the alert
+            throw new Error(error.message || "A network or CORS error occurred."); 
+        }
+    }
+
+} // This is the final closing bracket for if(window.location.pathname.includes("admin.html"))

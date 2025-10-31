@@ -971,3 +971,33 @@ input:checked + .slider:before {
 .dark-mode #editUploadStatus {
   color: var(--primary-color);
 }
+
+/* --- NEW FACEBOOK TOGGLE STYLES --- */
+.fb-card {
+  margin-top: 12px;
+  margin-bottom: 10px; /* Added margin for spacing before post button */
+  background: rgba(59, 89, 152, 0.1);
+  border: 1px solid rgba(59, 89, 152, 0.2);
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.schedule-toggle.fb-toggle {
+  color: #3b5998; /* Facebook Blue */
+  font-weight: 600;
+}
+
+.schedule-toggle.fb-toggle i {
+  font-size: 1.2em;
+  transform: translateY(1px);
+}
+
+.dark-mode .fb-card {
+  background: rgba(139, 157, 195, 0.1);
+  border: 1px solid rgba(139, 157, 195, 0.2);
+}
+
+.dark-mode .schedule-toggle.fb-toggle {
+  color: #8b9dc3; /* Lighter Facebook color for dark mode */
+}
+/* --- END OF NEW STYLES --- */
