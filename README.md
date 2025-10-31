@@ -4,23 +4,20 @@ A responsive web application designed for schools and universities to post, mana
 View the Live Demo: https://joseph-montes.github.io/school-connect/
 
 🚀 Core Features
+
 Admin Panel (admin.html)
+
 Secure Authentication: Admin-only login page powered by Firebase Auth.
 
 Full CRUD: Admins can Create, Read, Update, and Delete all announcements.
 
 Multi-File Uploader:
-
 Upload multiple images, PDFs, and documents at the same time.
-
 File uploads are handled by Cloudinary, keeping the database fast.
-
 Ability to add or remove files when editing a post.
-
 File preview shows all staged files before posting.
 
 Post Scheduling: A "Schedule for later" option allows admins to set a future date and time for an announcement to be automatically posted.
-
 Manage Dashboard: View, edit, or delete all current and scheduled posts from one place.
 
 Public Feed (index.html)
