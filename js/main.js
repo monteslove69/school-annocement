@@ -191,7 +191,6 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
     
     const isPinned = pinnedIds.includes(data.id);
 
-    // --- REWRITTEN "SMART GALLERY" LOGIC ---
     let attachmentHTML = '';
     if (data.attachments && data.attachments.length > 0) {
         const images = data.attachments.filter(att => att.isImage);
@@ -202,7 +201,6 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
         if (imageCount > 0) {
             let gridClass = `grid-count-${imageCount}`;
             if (imageCount >= 3) {
-                // Use "3-plus" style for 3 or more images
                 gridClass = 'grid-count-3-plus'; 
             }
 
@@ -220,7 +218,6 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
                                  <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
                                </div>`;
             } else if (imageCount >= 3) {
-                // Show first 2 images normally
                 imagesHTML += `<div class="announcement-image-wrapper">
                                  <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
                                </div>
@@ -228,8 +225,7 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
                                  <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
                                </div>`;
                 
-                // Show 3rd image with "+ more" overlay
-                const moreCount = imageCount - 2; // Total - 2 shown = "more"
+                const moreCount = imageCount - 2;
                 imagesHTML += `<div class="announcement-image-wrapper more-images-wrapper">
                                  <img src="${images[2].downloadURL}" alt="${images[2].fileName}" class="announcement-image">
                                  <div class="more-images-overlay">+${moreCount}</div>
@@ -242,16 +238,15 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
         if (files.length > 0) {
             filesHTML = `<div class="attachment-container">` +
                 files.map(att => `
-                    <a href="${att.downloadURL}" target="_blank" rel="noopener noreferrer" class="attachment-link" onclick="event.stopPropagation()">
+                    <div class="attachment-link">
                         <i class="fas fa-paperclip"></i> ${att.fileName}
-                    </a>
+                    </div>
                 `).join('') +
                 `</div>`;
         }
         
-        attachmentHTML = imagesHTML + filesHTML; // Show images first, then files
+        attachmentHTML = imagesHTML + filesHTML;
     }
-    // --- END OF UPDATE ---
 
     div.innerHTML = `
       <i class="fas fa-thumbtack pin-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? 'Unpin' : 'Pin'} announcement"></i>
@@ -287,7 +282,6 @@ function openFullScreen(data) {
   largeTime.textContent = `Posted: ${new Date(data.timestamp).toLocaleString()}`;
   largeCategory.className = `category category-${(data.category || 'unknown').toLowerCase()}`;
   
-  // --- UPDATED: Logic to show all images/links in modal ---
   const largeAttachmentEl = document.getElementById('large-attachment');
   largeAttachmentEl.innerHTML = ''; 
   
@@ -314,7 +308,6 @@ function openFullScreen(data) {
           largeAttachmentEl.innerHTML += imagesHTML; 
       }
   }
-  // --- END OF UPDATE ---
 
   updateLargePinButton(data.id);
   searchOverlay.classList.remove('active');
@@ -410,6 +403,7 @@ searchOverlay.addEventListener('click', (e) => {
 document.addEventListener('click', (e) => {
   const announcementCard = e.target.closest('.announcement');
   if (!announcementCard) return;
+
   if (e.target.classList.contains('pin-btn')) {
     try {
       const id = JSON.parse(announcementCard.dataset.announcement).id;
@@ -417,11 +411,12 @@ document.addEventListener('click', (e) => {
     } catch (error) {
       console.error("Error parsing ID for pinning:", error);
     }
-    e.stopPropagation();
-  } else {
-    if (e.target.closest('a') || e.target.closest('.announcement-image-wrapper')) {
-      return;
-    }
+    e.stopPropagation(); 
+  } 
+  else if (e.target.closest('a')) {
+    e.stopPropagation(); 
+  }
+  else {
     try {
       const data = JSON.parse(announcementCard.dataset.announcement);
       openFullScreen(data);
