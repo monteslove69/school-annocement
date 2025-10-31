@@ -133,6 +133,87 @@ if (loginBtn) {
     });
 }
 
+// --- GLOBAL FACEBOOK API FUNCTIONS (Must be defined before admin logic) ---
+
+async function postToFacebookAPI(announcementData) {
+    // !!! SECURITY WARNING: Token is embedded in client-side code !!!
+    const PAGE_ID = '849836108213722';
+    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+
+    let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
+    const message = `${announcementData.title}\n\n${announcementData.message}`;
+    
+    const params = new URLSearchParams();
+    params.append('access_token', PAGE_ACCESS_TOKEN);
+    params.append('message', message);
+
+    const firstImage = announcementData.attachments?.find(a => a.isImage);
+    if (firstImage) {
+        endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
+        params.append('url', firstImage.downloadURL);
+    }
+
+    const fullUrl = `${endpoint}?${params.toString()}`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'POST'
+        });
+        
+        const result = await response.json(); 
+
+        if (result.error) {
+            const errorMessage = result.error.message || JSON.stringify(result.error);
+            throw new Error(errorMessage);
+        }
+
+        if (!response.ok) {
+            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
+        }
+
+        return result;
+
+    } catch (error) {
+        throw new Error(error.message || "A network or CORS error occurred."); 
+    }
+}
+
+async function updatePostOnFacebookAPI(fbPostId, newPostData) {
+    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+    
+    const message = `${newPostData.title}\n\n${newPostData.message}\n\n(Edited: ${new Date().toLocaleString()})`;
+    
+    const params = new URLSearchParams();
+    params.append('access_token', PAGE_ACCESS_TOKEN);
+    params.append('message', message);
+    
+    const endpoint = `https://graph.facebook.com/v19.0/${fbPostId}`;
+    const fullUrl = `${endpoint}?${params.toString()}`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'POST'
+        });
+        
+        const result = await response.json(); 
+        
+        if (result.error) {
+            const errorMessage = result.error.message || JSON.stringify(result.error);
+            throw new Error(errorMessage);
+        }
+
+        if (!response.ok) {
+            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
+        }
+
+        console.log('Facebook post update successful:', result);
+        return result;
+
+    } catch (error) {
+        throw new Error(error.message || "A network or CORS error occurred during FB update."); 
+    }
+}
+
 /*
 ===============================================
   ADMIN PANEL LOGIC (admin.html)
@@ -140,13 +221,11 @@ if (loginBtn) {
 */
 if (window.location.pathname.includes("admin.html")) {
 
-    let filesToUpload = []; // Holds all files for a NEW post
+    let filesToUpload = [];
     let uploadAbortController = null; 
     
-    // --- NEW: State for the EDIT modal ---
     let editFilesToKeep = [];
     let editFilesToUpload = [];
-    // -------------------------------------
 
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const body = document.body;
@@ -498,7 +577,6 @@ if (window.location.pathname.includes("admin.html")) {
         announcementsList.appendChild(div);
     }
 
-    // --- ⬇️ THIS FUNCTION IS HEAVILY UPDATED ⬇️ ---
     function editAnnouncement(id, category) {
         db.ref(`announcements/${category}/${id}`).once('value')
             .then((snapshot) => {
@@ -513,7 +591,6 @@ if (window.location.pathname.includes("admin.html")) {
                 const closeEditModal = document.getElementById('closeEditModal');
                 const cancelEditBtn = document.getElementById('cancelEditBtn');
                 
-                // New elements for file editing
                 const editFilePreview = document.getElementById('editFilePreviewContainer');
                 const editNewFilePreview = document.getElementById('editNewFilePreviewContainer');
                 const editFileUpload = document.getElementById('editFileUpload');
@@ -524,15 +601,15 @@ if (window.location.pathname.includes("admin.html")) {
                    return; 
                 }
 
-                // Reset state
                 editTitle.value = data.title;
                 editMessage.value = data.message;
                 editCategory.value = data.category;
                 editFilesToKeep = data.attachments ? [...data.attachments] : [];
                 editFilesToUpload = [];
                 editUploadStatus.textContent = '';
+                
+                const originalFbPostId = data.fbPostId || null;
 
-                // Function to render previews
                 const renderEditFilePreviews = () => {
                     editFilePreview.innerHTML = '';
                     editNewFilePreview.innerHTML = '';
@@ -602,9 +679,8 @@ if (window.location.pathname.includes("admin.html")) {
                     });
                 };
                 
-                renderEditFilePreviews(); // Initial render
+                renderEditFilePreviews();
 
-                // Add listener for the "Add More Files" input
                 const newFileUploadListener = () => {
                     Array.from(editFileUpload.files).forEach(file => {
                         if (!editFilesToUpload.some(f => f.name === file.name && f.size === file.size)) {
@@ -612,7 +688,7 @@ if (window.location.pathname.includes("admin.html")) {
                         }
                     });
                     renderEditFilePreviews();
-                    editFileUpload.value = null; // Clear input
+                    editFileUpload.value = null;
                 };
                 editFileUpload.onchange = newFileUploadListener;
 
@@ -620,7 +696,7 @@ if (window.location.pathname.includes("admin.html")) {
                 
                 const closeEditForm = () => {
                     editModal.classList.remove('show');
-                    editFileUpload.onchange = null; // Clean up listener
+                    editFileUpload.onchange = null;
                 };
                 
                 closeEditModal.onclick = closeEditForm;
@@ -654,7 +730,8 @@ if (window.location.pathname.includes("admin.html")) {
                     updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
                     editUploadStatus.textContent = '';
                     
-                    let finalAttachments = [...editFilesToKeep]; // Start with the files we kept
+                    let finalAttachments = [...editFilesToKeep];
+                    let currentFbPostId = originalFbPostId;
 
                     // Upload new files
                     if (editFilesToUpload.length > 0) {
@@ -667,7 +744,7 @@ if (window.location.pathname.includes("admin.html")) {
                                 const result = await uploadFileToCloudinary(file, uploadAbortController.signal);
                                 newUploadedFiles.push(result);
                             }
-                            finalAttachments = [...editFilesToKeep, ...newUploadedFiles]; // Combine lists
+                            finalAttachments = [...editFilesToKeep, ...newUploadedFiles];
                             editUploadStatus.textContent = 'Uploads complete!';
                         } catch (error) {
                             if (error.name === 'AbortError') {
@@ -692,13 +769,31 @@ if (window.location.pathname.includes("admin.html")) {
                         category: newCategory,
                         timestamp: data.timestamp,
                         lastEdited: new Date().toISOString(),
-                        attachments: finalAttachments // Save the final combined array
+                        attachments: finalAttachments,
+                        fbPostId: currentFbPostId 
                     };
+                    
+                    // --- FACEBOOK UPDATE LOGIC START ---
+                    let fbUpdatePromise = Promise.resolve();
+                    if (currentFbPostId) {
+                        const newPostData = { title, message, attachments: finalAttachments };
+                        fbUpdatePromise = updatePostOnFacebookAPI(currentFbPostId, newPostData)
+                            .catch(fbError => {
+                                console.error('Facebook Edit Failed:', fbError);
+                                alert(`⚠️ Warning: Announcement saved, but failed to update on Facebook: ${fbError.message}`);
+                            });
+                    }
+                    // --- FACEBOOK UPDATE LOGIC END ---
+
 
                     if (newCategory !== category) {
                         const oldRef = db.ref(`announcements/${category}/${id}`);
                         const newRef = db.ref(`announcements/${newCategory}`).push();
-                        newRef.set(updates)
+                        
+                        Promise.all([
+                            fbUpdatePromise,
+                            newRef.set(updates)
+                        ])
                             .then(() => oldRef.remove())
                             .then(() => {
                                 alert('✅ Announcement updated and moved to new category!');
@@ -707,7 +802,10 @@ if (window.location.pathname.includes("admin.html")) {
                             })
                             .catch(error => alert('❌ Error updating announcement: ' + error.message));
                     } else {
-                        db.ref(`announcements/${category}/${id}`).update(updates)
+                        Promise.all([
+                            fbUpdatePromise,
+                            db.ref(`announcements/${category}/${id}`).update(updates)
+                        ])
                             .then(() => {
                                 alert('✅ Announcement updated!');
                                 closeEditForm();
@@ -728,7 +826,7 @@ if (window.location.pathname.includes("admin.html")) {
                     closeEditModal.onclick = null;
                     cancelEditBtn.onclick = null;
                     editModal.onclick = null;
-                    editFileUpload.onchange = null; // Clean up listener
+                    editFileUpload.onchange = null;
                 };
                 
                 [closeEditModal, cancelEditBtn].forEach(btn => {
@@ -836,7 +934,6 @@ if (window.location.pathname.includes("admin.html")) {
                 postData.timestamp = new Date().toISOString(); 
                 postData.scheduledFrom = data.scheduledAt; 
 
-                // Chain the Facebook post if needed
                 const p = postRef.set(postData)
                     .then(async () => {
                         if (postData.postToFacebook) {
@@ -847,7 +944,7 @@ if (window.location.pathname.includes("admin.html")) {
                                 console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
                             }
                         }
-                        return ref.remove(); // Remove scheduled item regardless of FB success
+                        return ref.remove();
                     });
                 return p;
             })
@@ -893,10 +990,8 @@ if (window.location.pathname.includes("admin.html")) {
                         postData.timestamp = new Date().toISOString();
                         postData.scheduledFrom = data.scheduledAt;
 
-                        // NEW LOGIC: Chain Facebook post
                         const p = postRef.set(postData)
                             .then(async () => {
-                                // Check flag from the saved post data
                                 if (postData.postToFacebook) {
                                     try {
                                         await postToFacebookAPI(postData);
@@ -905,7 +1000,6 @@ if (window.location.pathname.includes("admin.html")) {
                                         console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
                                     }
                                 }
-                                // Now remove the scheduled item
                                 return db.ref('scheduled_announcements/' + key).remove();
                         });
 
@@ -974,7 +1068,7 @@ if (window.location.pathname.includes("admin.html")) {
             const scheduleAt = document.getElementById('scheduleAt').value;
             const uploadStatus = document.getElementById('uploadStatus');
             const cancelUploadBtn = document.getElementById('cancelUploadBtn');
-            const postToFacebook = document.getElementById('postToFacebookToggle').checked; // GET THE VALUE
+            const postToFacebook = document.getElementById('postToFacebookToggle').checked;
 
             if (!title || !message || !category) {
                 alert('⚠️ Please fill in all fields (Title, Message, and Category)!');
@@ -991,7 +1085,7 @@ if (window.location.pathname.includes("admin.html")) {
                 category: category,
                 timestamp: new Date().toISOString(),
                 attachments: [],
-                postToFacebook: postToFacebook // <-- ADDED THIS LINE
+                postToFacebook: postToFacebook
             };
 
             if (filesToUpload.length > 0) {
@@ -1036,7 +1130,6 @@ if (window.location.pathname.includes("admin.html")) {
             cancelUploadBtn.style.display = 'none';
             uploadAbortController = null;
 
-            // Clear global state
             filesToUpload = []; 
             if (filePreviewContainer) filePreviewContainer.innerHTML = ''; 
             if (clearFilesBtn) clearFilesBtn.style.display = 'none'; 
@@ -1069,30 +1162,33 @@ if (window.location.pathname.includes("admin.html")) {
                 alert('✅ Announcement scheduled successfully!');
                 
             } else {
-                // 1. Save to Firebase
-                await db.ref(`announcements/${dataToSave.category}`).push(dataToSave);
                 
-                // 2. Check if we also need to post to Facebook
+                const newPostRef = db.ref(`announcements/${dataToSave.category}`).push();
+                let fbPostId = null;
+
                 if (dataToSave.postToFacebook) {
                     try {
-                        // 3. Await the Facebook post
-                        await postToFacebookAPI(dataToSave);
+                        const fbResult = await postToFacebookAPI(dataToSave);
+                        if (fbResult && fbResult.id) {
+                            fbPostId = fbResult.id; 
+                        }
                         alert('✅ Announcement posted successfully to Firebase and Facebook!');
                     } catch (fbError) {
                         console.error('Facebook post failed:', fbError);
                         alert(`✅ Announcement posted to Firebase, but FAILED to post to Facebook: ${fbError.message}`);
                     }
                 } else {
-                    // 3. Just alert for Firebase success
                     alert('✅ Announcement posted successfully to Firebase!');
                 }
+                
+                dataToSave.fbPostId = fbPostId;
+                await newPostRef.set(dataToSave);
             }
 
-            // Clear form fields
             document.getElementById('title').value = '';
             document.getElementById('message').value = '';
             document.getElementById('category').value = '';
-            document.getElementById('postToFacebookToggle').checked = false; // <-- ADDED THIS
+            document.getElementById('postToFacebookToggle').checked = false;
             fileUpload.value = null; 
             document.getElementById('scheduleToggle').checked = false;
             document.getElementById('scheduleAt').value = '';
@@ -1111,67 +1207,89 @@ if (window.location.pathname.includes("admin.html")) {
             alert('❌ Error saving announcement to Firebase: ' + error.message);
         }
     }
+}
 
-    //
-    // --- THIS IS THE FINAL FUNCTION WITH THE NEW TOKEN ---
-    //
-    async function postToFacebookAPI(announcementData) {
-        // -------------------------------------------------------------------
-        // !!! SECURITY WARNING !!!
-        // This token is embedded in client-side code and is INSECURE.
-        // It is recommended to use a server-side component (like Firebase 
-        // Functions) to hide this token for production applications.
-        // -------------------------------------------------------------------
-        const PAGE_ID = '849836108213722'; // <-- YOUR PAGE ID
-        
-        // --- FINAL LONG-LIVED PAGE TOKEN ---
-        const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+/*
+================================================
+  GLOBAL FACEBOOK API FUNCTIONS (Outside Admin Block)
+================================================
+*/
 
-        let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
-        const message = `${announcementData.title}\n\n${announcementData.message}`;
-        
-        const params = new URLSearchParams();
-        params.append('access_token', PAGE_ACCESS_TOKEN);
-        params.append('message', message);
+async function postToFacebookAPI(announcementData) {
+    // !!! SECURITY WARNING: Token is embedded in client-side code !!!
+    const PAGE_ID = '849836108213722';
+    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
 
-        // Check for an image and use it if one exists
-        const firstImage = announcementData.attachments?.find(a => a.isImage);
-        if (firstImage) {
-            // Use the /photos endpoint if there's an image
-            endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
-            params.append('url', firstImage.downloadURL);
-        }
+    let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
+    const message = `${announcementData.title}\n\n${announcementData.message}`;
+    
+    const params = new URLSearchParams();
+    params.append('access_token', PAGE_ACCESS_TOKEN);
+    params.append('message', message);
 
-        const fullUrl = `${endpoint}?${params.toString()}`;
-
-        try {
-            const response = await fetch(fullUrl, {
-                method: 'POST'
-            });
-            
-            const result = await response.json(); // Get the JSON response from Facebook
-
-            // Check for ANY error structure in the JSON
-            if (result.error) {
-                // Use the error message if it exists, otherwise stringify the whole error object
-                const errorMessage = result.error.message || JSON.stringify(result.error);
-                throw new Error(errorMessage);
-            }
-
-            // Handle non-200 responses that might not have a 'result.error'
-            if (!response.ok) {
-                throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
-            }
-
-            console.log('Facebook post successful:', result);
-            return result;
-
-        } catch (error) {
-            // This catches fetch failures (CORS, network) or JSON parse failures
-            console.error("Error during Facebook fetch:", error);
-            // Re-throw the error so it has a .message property for the alert
-            throw new Error(error.message || "A network or CORS error occurred."); 
-        }
+    const firstImage = announcementData.attachments?.find(a => a.isImage);
+    if (firstImage) {
+        endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
+        params.append('url', firstImage.downloadURL);
     }
 
-} // This is the final closing bracket for if(window.location.pathname.includes("admin.html"))
+    const fullUrl = `${endpoint}?${params.toString()}`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'POST'
+        });
+        
+        const result = await response.json(); 
+
+        if (result.error) {
+            const errorMessage = result.error.message || JSON.stringify(result.error);
+            throw new Error(errorMessage);
+        }
+
+        if (!response.ok) {
+            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
+        }
+
+        return result;
+
+    } catch (error) {
+        throw new Error(error.message || "A network or CORS error occurred."); 
+    }
+}
+
+async function updatePostOnFacebookAPI(fbPostId, newPostData) {
+    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+    
+    const message = `${newPostData.title}\n\n${newPostData.message}\n\n(Edited: ${new Date().toLocaleString()})`;
+    
+    const params = new URLSearchParams();
+    params.append('access_token', PAGE_ACCESS_TOKEN);
+    params.append('message', message);
+    
+    const endpoint = `https://graph.facebook.com/v19.0/${fbPostId}`;
+    const fullUrl = `${endpoint}?${params.toString()}`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'POST'
+        });
+        
+        const result = await response.json(); 
+        
+        if (result.error) {
+            const errorMessage = result.error.message || JSON.stringify(result.error);
+            throw new Error(errorMessage);
+        }
+
+        if (!response.ok) {
+            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
+        }
+
+        console.log('Facebook post update successful:', result);
+        return result;
+
+    } catch (error) {
+        throw new Error(error.message || "A network or CORS error occurred during FB update."); 
+    }
+}
