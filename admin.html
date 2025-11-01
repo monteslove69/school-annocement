@@ -11,13 +11,13 @@
   <div class="header-content">
     
     <div class="dark-mode-toggle-wrapper">
-        <div class="toggle-container">
-            <label for="dark-mode-toggle" class="switch-label">Dark Mode</label>
-            <label class="switch">
-                <input type="checkbox" id="dark-mode-toggle">
-                <span class="slider round"></span>
-            </label>
-        </div>
+      <div class="toggle-container">
+        <label for="dark-mode-toggle" class="switch-label">Dark Mode</label>
+        <label class="switch">
+          <input type="checkbox" id="dark-mode-toggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
     </div>
     <h1><i class="fas fa-user-shield"></i> SchoolConnect Admin Panel</h1>
     <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -45,13 +45,15 @@
       <option value="Urgent">Urgent</option>
     </select>
     
-    <div class="fb-card">
-      <div class="schedule-top">
-        <label class="schedule-toggle fb-toggle">
-          <input type="checkbox" id="postToFacebookToggle">
-          <i class="fab fa-facebook-square"></i> Post to Facebook Page
-        </label>
-      </div>
+    <div>
+      <label for="postDestination">
+        <i class="fab fa-facebook"></i> Post Destination
+      </label>
+      <select id="postDestination">
+        <option value="local" selected>Local (Firebase) Only</option>
+        <option value="both">Local (Firebase) & Facebook</option>
+        <option value="facebook">Facebook Only</option>
+      </select>
     </div>
     <button id="postBtn"><i class="fas fa-bullhorn"></i> Post Announcement</button>
     

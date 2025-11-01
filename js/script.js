@@ -571,6 +571,25 @@ if (window.location.pathname.includes("admin.html")) {
             }
         }
 
+        // --- NEW DELETE BUTTON LOGIC ---
+        // Always show the local delete button
+        const localDeleteBtn = `
+            <button class="delete-btn" onclick="deleteAnnouncementFirebase('${id}', '${data.category}')">
+                <i class="fas fa-trash"></i> Delete (Local)
+            </button>
+        `;
+        
+        // Only show the Facebook delete button if a fbPostId exists
+        let fbDeleteBtn = '';
+        if (data.fbPostId) {
+            fbDeleteBtn = `
+                <button class="delete-btn-fb" onclick="deleteAnnouncementFacebook('${id}', '${data.category}', '${data.fbPostId}')">
+                    <i class="fab fa-facebook"></i> Delete (FB)
+                </button>
+            `;
+        }
+        // --- END NEW DELETE BUTTON LOGIC ---
+
         div.innerHTML = `
             <div class="announcement-header">
                 <div class="announcement-title">${data.title}</div>
@@ -587,9 +606,8 @@ if (window.location.pathname.includes("admin.html")) {
                 <button class="edit-btn" onclick="editAnnouncement('${id}', '${data.category}')">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                <button class="delete-btn" onclick="deleteAnnouncement('${id}', '${data.category}')">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                ${localDeleteBtn}
+                ${fbDeleteBtn}
             </div>
         `;
         announcementsList.appendChild(div);
@@ -874,42 +892,47 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(error => alert('❌ Error loading announcement: ' + error.message));
     }
 
-    function deleteAnnouncement(id, category) {
-        if (confirm('Are you sure you want to delete this announcement?')) {
+    /**
+     * NEW: Deletes an announcement from Firebase ONLY.
+     */
+    function deleteAnnouncementFirebase(id, category) {
+        if (confirm('Are you sure you want to delete this announcement from the app (Firebase)?\n\nThis will NOT delete the post from Facebook.')) {
             
-            db.ref(`announcements/${category}/${id}`).once('value')
-                .then(snapshot => {
-                    const data = snapshot.val();
-                    const fbPostId = data ? data.fbPostId : null;
-                    
-                    let fbDeletePromise = Promise.resolve();
-                    if (fbPostId) {
-                        // Ensure we use the global function defined below
-                        fbDeletePromise = deletePostOnFacebookAPI(fbPostId)
-                            .catch(fbError => {
-                                console.error('Facebook Delete Failed:', fbError);
-                                alert(`⚠️ Warning: Failed to delete Facebook post. Error: ${fbError.message}`);
-                            });
-                    }
-
-                    // Delete from Firebase ONLY after trying to delete from Facebook
-                    // We also return the 'fbPostId' status so the next .then() knows what message to show
-                    return Promise.all([fbDeletePromise, db.ref(`announcements/${category}/${id}`).remove()])
-                        .then(() => {
-                            return !!fbPostId; // Will be true if fbPostId existed, false if not
-                        });
-                })
-                .then((fbPostAttempted) => { // <-- This value comes from the return above
-                    if (fbPostAttempted) {
-                        alert('✅ Announcement deleted (locally and attempted on Facebook)!');
-                    } else {
-                        alert('✅ Announcement deleted successfully!');
-                    }
+            db.ref(`announcements/${category}/${id}`).remove()
+                .then(() => {
+                    alert('✅ Announcement deleted from Firebase!');
                     loadAnnouncements(document.getElementById('filterCategory').value);
                 })
-                .catch(error => alert('❌ Error deleting announcement: ' + error.message));
+                .catch(error => alert('❌ Error deleting from Firebase: ' + error.message));
         }
     }
+
+    /**
+     * NEW: Deletes a post from Facebook ONLY and updates the local record.
+     */
+    function deleteAnnouncementFacebook(id, category, fbPostId) {
+        if (confirm('Are you sure you want to delete this post from Facebook?\n\nThis will NOT delete the announcement from the app.')) {
+            
+            deletePostOnFacebookAPI(fbPostId)
+                .then(() => {
+                    // Success! Now, remove the fbPostId from our local record
+                    // so the button disappears and we know it's gone.
+                    return db.ref(`announcements/${category}/${id}`).update({
+                        fbPostId: null,
+                        fbPostType: null
+                    });
+                })
+                .then(() => {
+                    alert('✅ Post deleted from Facebook!');
+                    loadAnnouncements(document.getElementById('filterCategory').value);
+                })
+                .catch(error => {
+                    console.error('Facebook Delete Failed:', error);
+                    alert(`❌ Error deleting from Facebook: ${error.message}`);
+                });
+        }
+    }
+
 
     function loadScheduledAnnouncements() {
         const scheduledList = document.getElementById('scheduled-list');
@@ -1078,12 +1101,22 @@ if (window.location.pathname.includes("admin.html")) {
             const scheduleAt = document.getElementById('scheduleAt').value;
             const uploadStatus = document.getElementById('uploadStatus');
             const cancelUploadBtn = document.getElementById('cancelUploadBtn');
-            const postToFacebook = document.getElementById('postToFacebookToggle').checked;
+            
+            // --- MODIFIED ---
+            const postDestination = document.getElementById('postDestination').value;
+            // --- END MODIFICATION ---
 
             if (!title || !message || !category) {
                 alert('⚠️ Please fill in all fields (Title, Message, and Category)!');
                 return;
             }
+
+            // --- MODIFIED ---
+            if (scheduleToggle && postDestination === 'facebook') {
+                alert('⚠️ "Facebook Only" posts cannot be scheduled. Please post it now or choose another destination.');
+                return;
+            }
+            // --- END MODIFICATION ---
 
             postBtn.disabled = true;
             postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
@@ -1094,8 +1127,7 @@ if (window.location.pathname.includes("admin.html")) {
                 message: message,
                 category: category,
                 timestamp: new Date().toISOString(),
-                attachments: [],
-                postToFacebook: postToFacebook
+                attachments: []
             };
 
             if (filesToUpload.length > 0) {
@@ -1132,7 +1164,9 @@ if (window.location.pathname.includes("admin.html")) {
             } 
             
             uploadStatus.textContent = 'Saving post...';
-            await saveAnnouncementToFirebase(announcementData, scheduleToggle, scheduleAt);
+            // --- MODIFIED ---
+            await saveAnnouncementToFirebase(announcementData, scheduleToggle, scheduleAt, postDestination);
+            // --- END MODIFICATION ---
             
             postBtn.disabled = false;
             postBtn.innerHTML = 'Post Announcement';
@@ -1146,7 +1180,7 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
-    async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime) {
+    async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime, postDestination) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
         const fileUpload = document.getElementById('fileUpload');
@@ -1163,45 +1197,75 @@ if (window.location.pathname.includes("admin.html")) {
                     return;
                 }
 
+                const postToFacebook = (postDestination === 'both');
+
                 const scheduledData = {
                     ...dataToSave,
-                    scheduledAt: scheduledAtDate.toISOString()
+                    scheduledAt: scheduledAtDate.toISOString(),
+                    postToFacebook: postToFacebook
                 };
 
                 await db.ref('scheduled_announcements').push(scheduledData);
                 alert('✅ Announcement scheduled successfully!');
                 
             } else {
-                
-                const newPostRef = db.ref(`announcements/${dataToSave.category}`).push();
+                // POST NOW
                 let fbPostId = null;
-                let fbPostType = null; // <-- Add this
-
-                if (dataToSave.postToFacebook) {
+                let fbPostType = null;
+                let fbError = null;
+                let postedToFB = false;
+                let postedToLocal = false;
+                
+                // Step 1: Try posting to Facebook if requested
+                if (postDestination === 'both' || postDestination === 'facebook') {
                     try {
                         const fbResult = await postToFacebookAPI(dataToSave);
                         if (fbResult && fbResult.id) {
                             fbPostId = fbResult.id; 
-                            fbPostType = fbResult.type; // <-- Save the type
+                            fbPostType = fbResult.type;
+                            postedToFB = true;
                         }
-                        alert('✅ Announcement posted successfully to Firebase and Facebook!');
-                    } catch (fbError) {
-                        console.error('Facebook post failed:', fbError);
-                        alert(`✅ Announcement posted to Firebase, but FAILED to post to Facebook: ${fbError.message}`);
+                    } catch (error) {
+                        console.error('Facebook post failed:', error);
+                        fbError = error;
                     }
-                } else {
-                    alert('✅ Announcement posted successfully to Firebase!');
                 }
-                
-                dataToSave.fbPostId = fbPostId;
-                dataToSave.fbPostType = fbPostType; // <-- Save the type to Firebase
-                await newPostRef.set(dataToSave);
+
+                // Step 2: Try posting to Firebase if requested
+                if (postDestination === 'local' || postDestination === 'both') {
+                    dataToSave.fbPostId = fbPostId;
+                    dataToSave.fbPostType = fbPostType;
+                    
+                    const newPostRef = db.ref(`announcements/${dataToSave.category}`).push();
+                    await newPostRef.set(dataToSave);
+                    postedToLocal = true;
+                }
+
+                // Step 3: Give feedback based on what happened
+                if (postDestination === 'both') {
+                    if (postedToLocal && postedToFB) {
+                        alert('✅ Posted successfully to Firebase and Facebook!');
+                    } else if (postedToLocal && fbError) {
+                        alert(`✅ Posted to Firebase, but FAILED to post to Facebook: ${fbError.message}`);
+                    } else {
+                        alert('❌ An error occurred.');
+                    }
+                } else if (postDestination === 'local') {
+                    alert('✅ Posted successfully to Firebase only!');
+                } else if (postDestination === 'facebook') {
+                    if (postedToFB) {
+                        alert('✅ Posted successfully to Facebook only!');
+                    } else if (fbError) {
+                        alert(`❌ FAILED to post to Facebook: ${fbError.message}`);
+                    }
+                }
             }
 
+            // Clear the form
             document.getElementById('title').value = '';
             document.getElementById('message').value = '';
             document.getElementById('category').value = '';
-            document.getElementById('postToFacebookToggle').checked = false;
+            document.getElementById('postDestination').value = 'local';
             fileUpload.value = null; 
             document.getElementById('scheduleToggle').checked = false;
             document.getElementById('scheduleAt').value = '';
@@ -1217,7 +1281,7 @@ if (window.location.pathname.includes("admin.html")) {
             }
 
         } catch (error) {
-            alert('❌ Error saving announcement to Firebase: ' + error.message);
+            alert('❌ Error saving announcement: ' + error.message);
         }
     }
 }

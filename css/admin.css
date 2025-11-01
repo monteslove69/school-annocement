@@ -403,7 +403,8 @@ button {
   gap: 10px;
 }
 
-.edit-btn, .delete-btn {
+/* === MODIFIED: Added .delete-btn-fb === */
+.edit-btn, .delete-btn, .delete-btn-fb {
   width: auto;
   padding: 6px 12px;
   font-size: 14px;
@@ -418,10 +419,17 @@ button {
   background: var(--error-color);
 }
 
-.edit-btn:hover, .delete-btn:hover {
+.delete-btn-fb {
+  background-color: #0866FF; /* Facebook Blue */
+  color: white;
+}
+
+.edit-btn:hover, .delete-btn:hover, .delete-btn-fb:hover {
   transform: translateY(-2px);
   opacity: 0.9;
 }
+/* === END MODIFICATION === */
+
 
 .edit-modal-content {
   max-width: 600px;
@@ -972,34 +980,7 @@ input:checked + .slider:before {
   color: var(--primary-color);
 }
 
-/* --- NEW FACEBOOK TOGGLE STYLES --- */
-.fb-card {
-  margin-top: 12px;
-  margin-bottom: 10px; /* Added margin for spacing before post button */
-  background: rgba(59, 89, 152, 0.1);
-  border: 1px solid rgba(59, 89, 152, 0.2);
-  padding: 12px;
-  border-radius: 12px;
-}
-
-.schedule-toggle.fb-toggle {
-  color: #3b5998; /* Facebook Blue */
-  font-weight: 600;
-}
-
-.schedule-toggle.fb-toggle i {
-  font-size: 1.2em;
-  transform: translateY(1px);
-}
-
-.dark-mode .fb-card {
-  background: rgba(139, 157, 195, 0.1);
-  border: 1px solid rgba(139, 157, 195, 0.2);
-}
-
-.dark-mode .schedule-toggle.fb-toggle {
-  color: #8b9dc3; /* Lighter Facebook color for dark mode */
-}
+/* === REMOVED .fb-card styles === */
 
 /* --- MODAL HEADING STYLES --- */
 .modal-body h3 {
@@ -1011,7 +992,6 @@ input:checked + .slider:before {
   text-align: left;
 }
 
-/* Make the first h3 (Scheduled) have less top margin */
 .modal-body h3:first-of-type {
   margin-top: 15px;
 }
@@ -1020,3 +1000,24 @@ input:checked + .slider:before {
   color: var(--primary-color);
   border-bottom: 1px solid var(--glass-border);
 }
+
+/* === ADDED: Styles for new destination label === */
+label[for="postDestination"] {
+  font-weight: 600; 
+  color: var(--secondary-color); 
+  font-size: 15px; 
+  margin-left: 5px;
+  display: inline-block;
+  margin-bottom: -5px; 
+}
+label[for="postDestination"] i {
+  color: #3b5998; 
+  margin-right: 5px;
+}
+.dark-mode label[for="postDestination"] {
+  color: var(--primary-color);
+}
+.dark-mode label[for="postDestination"] i {
+  color: #8b9dc3;
+}
+/* === END ADDITION === */
