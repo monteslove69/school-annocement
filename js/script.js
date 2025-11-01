@@ -135,9 +135,6 @@ if (loginBtn) {
 
 // --- GLOBAL FACEBOOK API FUNCTIONS ---
 
-// ===================================
-// === FUNCTION 1: FIXED ===
-// ===================================
 async function postToFacebookAPI(announcementData) {
     // !!! SECURITY WARNING: Token is embedded in client-side code !!!
     const PAGE_ID = '849836108213722';
@@ -483,6 +480,7 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
+
     function loadAnnouncements(category = 'All') {
         const announcementsList = document.getElementById('announcements-list');
         if (!announcementsList) return;
@@ -636,9 +634,6 @@ if (window.location.pathname.includes("admin.html")) {
         announcementsList.appendChild(div);
     }
 
-    // ===================================
-    // === FUNCTION 2: FIXED ===
-    // ===================================
     function editAnnouncement(id, category) {
         db.ref(`announcements/${category}/${id}`).once('value')
             .then((snapshot) => {
@@ -839,7 +834,6 @@ if (window.location.pathname.includes("admin.html")) {
                     // --- FACEBOOK UPDATE LOGIC START ---
                     let fbUpdatePromise = Promise.resolve();
 
-                    // vvv THIS LOGIC IS NEW vvv
                     if (currentFbPostId && originalFbPostType === 'photo') {
                         // This is a photo post. We cannot edit it.
                         console.warn('This is a photo post. Skipping Facebook update as it is not supported by the API for URL-based photos.');
@@ -866,7 +860,6 @@ if (window.location.pathname.includes("admin.html")) {
                         ])
                             .then(() => oldRef.remove())
                             .then(() => {
-                                // vvv NEW ALERT LOGIC vvv
                                 if (currentFbPostId && originalFbPostType === 'photo') {
                                     alert('✅ Announcement updated and moved in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
                                 } else {
@@ -882,7 +875,6 @@ if (window.location.pathname.includes("admin.html")) {
                             db.ref(`announcements/${category}/${id}`).update(updates)
                         ])
                             .then(() => {
-                                // vvv NEW ALERT LOGIC vvv
                                 if (currentFbPostId && originalFbPostType === 'photo') {
                                     alert('✅ Announcement updated in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
                                 } else {
@@ -921,6 +913,9 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(error => alert('❌ Error loading announcement: ' + error.message));
     }
 
+    // ===================================
+    // === FUNCTION: FIXED ===
+    // ===================================
     function deleteAnnouncement(id, category) {
         if (confirm('Are you sure you want to delete this announcement?')) {
             
@@ -940,10 +935,18 @@ if (window.location.pathname.includes("admin.html")) {
                     }
 
                     // Delete from Firebase ONLY after trying to delete from Facebook
-                    return Promise.all([fbDeletePromise, db.ref(`announcements/${category}/${id}`).remove()]);
+                    // We also return the 'fbPostId' status so the next .then() knows what message to show
+                    return Promise.all([fbDeletePromise, db.ref(`announcements/${category}/${id}`).remove()])
+                        .then(() => {
+                            return !!fbPostId; // Will be true if fbPostId existed, false if not
+                        });
                 })
-                .then(() => {
-                    alert('✅ Announcement deleted (locally and attempted on Facebook)!');
+                .then((fbPostAttempted) => { // <-- This value comes from the return above
+                    if (fbPostAttempted) {
+                        alert('✅ Announcement deleted (locally and attempted on Facebook)!');
+                    } else {
+                        alert('✅ Announcement deleted successfully!');
+                    }
                     loadAnnouncements(document.getElementById('filterCategory').value);
                 })
                 .catch(error => alert('❌ Error deleting announcement: ' + error.message));
@@ -1019,9 +1022,6 @@ if (window.location.pathname.includes("admin.html")) {
             });
     }
 
-    // ===================================
-    // === FUNCTION 3: FIXED ===
-    // ===================================
     function postScheduledNow(key) {
         const ref = db.ref('scheduled_announcements/' + key);
         ref.once('value')
@@ -1082,9 +1082,6 @@ if (window.location.pathname.includes("admin.html")) {
 
     let _scheduledProcessorInterval = null;
 
-    // ===================================
-    // === FUNCTION 4: FIXED ===
-    // ===================================
     function startScheduledProcessor(intervalSeconds = 5) {
         if (_scheduledProcessorInterval) return;
 
@@ -1264,9 +1261,6 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
-    // ===================================
-    // === FUNCTION 5: FIXED ===
-    // ===================================
     async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
