@@ -17,6 +17,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
+// === YOUR SECURE WEB APP URL ===
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxdmrmKXNw86rFD6Dm41qmFJ155i4X37Orklb_r56LT5MQMTXjI8wBmvKjb6h6kBERQ/exec";
+
+
 /*
 ===============================================
   LOGIN LOGIC (for index.html)
@@ -133,123 +137,81 @@ if (loginBtn) {
     });
 }
 
-// --- GLOBAL FACEBOOK API FUNCTIONS ---
 
+// --- NEW SECURE GLOBAL FACEBOOK API FUNCTIONS ---
+// These functions now call your Google Apps Script Web App
+
+/**
+ * NEW: Securely posts 0, 1, or many images via the server.
+ */
 async function postToFacebookAPI(announcementData) {
-    // !!! SECURITY WARNING: Token is embedded in client-side code !!!
-    const PAGE_ID = '849836108213722';
-    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
+  const response = await fetch(WEB_APP_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'post',
+      payload: announcementData
+    }),
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+  });
 
-    let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
-    const message = `${announcementData.title}\n\n${announcementData.message}`;
-    let postType = 'feed'; // <-- Track post type
-    
-    const params = new URLSearchParams();
-    params.append('access_token', PAGE_ACCESS_TOKEN);
-    params.append('message', message);
-
-    const firstImage = announcementData.attachments?.find(a => a.isImage);
-    if (firstImage) {
-        endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
-        params.append('url', firstImage.downloadURL);
-        postType = 'photo'; // <-- It's a photo post
-    }
-
-    const fullUrl = `${endpoint}?${params.toString()}`;
-
-    try {
-        const response = await fetch(fullUrl, {
-            method: 'POST'
-        });
-        
-        const result = await response.json(); 
-
-        if (result.error) {
-            const errorMessage = result.error.message || JSON.stringify(result.error);
-            throw new Error(errorMessage);
-        }
-
-        if (!response.ok) {
-            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
-        }
-
-        // Return an object with the ID and type
-        return {
-            id: result.id,
-            post_id: result.post_id, // Often returned for photos
-            type: postType
-        };
-
-    } catch (error) {
-        throw new Error(error.message || "A network or CORS error occurred."); 
-    }
+  const result = await response.json();
+  if (result.status === 'error') {
+    throw new Error(result.message);
+  }
+  return result; // Returns { status: "success", id: "...", type: "..." }
 }
 
+/**
+ * NEW: Securely updates a text post via the server.
+ */
 async function updatePostOnFacebookAPI(fbPostId, newPostData) {
-    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
-    
-    // Message without the date/time stamp for a clean edit
-    const message = `${newPostData.title}\n\n${newPostData.message}`; 
-    
-    const params = new URLSearchParams();
-    params.append('access_token', PAGE_ACCESS_TOKEN);
-    params.append('message', message);
-    
-    const endpoint = `https://graph.facebook.com/v19.0/${fbPostId}`;
-    const fullUrl = `${endpoint}?${params.toString()}`;
+  const response = await fetch(WEB_APP_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'update',
+      payload: {
+        fbPostId: fbPostId,
+        newPostData: newPostData
+      }
+    }),
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+  });
 
-    try {
-        const response = await fetch(fullUrl, {
-            method: 'POST'
-        });
-        
-        const result = await response.json(); 
-        
-        if (result.error) {
-            const errorMessage = result.error.message || JSON.stringify(result.error);
-            throw new Error(errorMessage);
-        }
-
-        if (!response.ok) {
-            throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
-        }
-
-        console.log('Facebook post update successful:', result);
-        return result;
-
-    } catch (error) {
-        throw new Error(error.message || "A network or CORS error occurred during FB update."); 
-    }
+  const result = await response.json();
+  if (result.status === 'error') {
+    throw new Error(result.message);
+  }
+  return result.result;
 }
 
+/**
+ * NEW: Securely deletes any post via the server.
+ */
 async function deletePostOnFacebookAPI(fbPostId) {
-    const PAGE_ACCESS_TOKEN = 'EAHJJZBrdnvMEBP7oyitolwzjm15jZAB6ZB0NK1otopzenc1MNgGKWZBoZABPtZACPanp1hDlwVnIUgyjEMZAZBfZCZCQbxebpRamqwHmck4PWiMYowtGZA69fC9dRZAGjFGZAHQmRtZBaF8luCSMtsohvy8ASy9ZAcG2URJJJWynT62VUQMXyepUdXfZCU3GWWlq1qntILcC7h3B';
-    
-    const params = new URLSearchParams();
-    params.append('access_token', PAGE_ACCESS_TOKEN);
-    
-    const endpoint = `https://graph.facebook.com/v19.0/${fbPostId}`;
-    const fullUrl = `${endpoint}?${params.toString()}`;
+  const response = await fetch(WEB_APP_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'delete',
+      payload: {
+        fbPostId: fbPostId
+      }
+    }),
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+  });
 
-    try {
-        const response = await fetch(fullUrl, {
-            method: 'DELETE'
-        });
-        
-        const result = await response.json(); 
-        
-        if (result.error || result.success === false) {
-             const errorMessage = result.error ? (result.error.message || JSON.stringify(result.error)) : "Deletion failed (Response status false).";
-             throw new Error(errorMessage);
-        }
-        
-        console.log('Facebook post deletion successful:', result);
-        return result;
-
-    } catch (error) {
-        throw new Error(error.message || "A network or CORS error occurred during FB deletion."); 
-    }
+  const result = await response.json();
+  if (result.status === 'error') {
+    throw new Error(result.message);
+  }
+  return result.result;
 }
+
 
 // --- DARK MODE SYNC FUNCTIONS (From main.js) ---
 const DARK_MODE_KEY = 'schoolconnect-dark-mode'; 
@@ -314,8 +276,7 @@ if (window.location.pathname.includes("admin.html")) {
     const logoutBtn = document.getElementById("logoutBtn");
     const postBtn = document.getElementById("postBtn");
 
-    // === MODIFIED ===
-    // Removed the else block and startScheduledProcessor() call
+    // Cleaned up: No more client-side scheduler
     auth.onAuthStateChanged((user) => {
         if (!user) {
             alert("⚠️ Please log in first!");
@@ -834,7 +795,7 @@ if (window.location.pathname.includes("admin.html")) {
                     // --- FACEBOOK UPDATE LOGIC START ---
                     let fbUpdatePromise = Promise.resolve();
 
-                    if (currentFbPostId && originalFbPostType === 'photo') {
+                    if (currentFbPostId && originalFbPostType.startsWith('photo')) { // Check if 'photo' or 'photo_album'
                         // This is a photo post. We cannot edit it.
                         console.warn('This is a photo post. Skipping Facebook update as it is not supported by the API for URL-based photos.');
                         
@@ -860,7 +821,7 @@ if (window.location.pathname.includes("admin.html")) {
                         ])
                             .then(() => oldRef.remove())
                             .then(() => {
-                                if (currentFbPostId && originalFbPostType === 'photo') {
+                                if (currentFbPostId && originalFbPostType.startsWith('photo')) {
                                     alert('✅ Announcement updated and moved in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
                                 } else {
                                     alert('✅ Announcement updated and moved to new category!');
@@ -875,7 +836,7 @@ if (window.location.pathname.includes("admin.html")) {
                             db.ref(`announcements/${category}/${id}`).update(updates)
                         ])
                             .then(() => {
-                                if (currentFbPostId && originalFbPostType === 'photo') {
+                                if (currentFbPostId && originalFbPostType.startsWith('photo')) {
                                     alert('✅ Announcement updated in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
                                 } else {
                                     alert('✅ Announcement updated!');
@@ -1076,12 +1037,6 @@ if (window.location.pathname.includes("admin.html")) {
             })
             .catch(err => alert('❌ Error cancelling scheduled announcement: ' + err.message));
     }
-
-    // === DELETED ===
-    // let _scheduledProcessorInterval = null;
-
-    // === DELETED ===
-    // function startScheduledProcessor(intervalSeconds = 5) { ... }
 
     async function uploadFileToCloudinary(file, signal) {
         const CLOUD_NAME = "dr65ufuol";

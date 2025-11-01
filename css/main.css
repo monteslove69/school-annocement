@@ -197,15 +197,12 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-/* --- SCROLLING FIX --- */
 #announcements, #search-results-announcements {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  /* REMOVED max-height and overflow-y */
 }
-/* --- END OF FIX --- */
 
 #search-results-announcements {
   padding-bottom: 20px;
@@ -651,7 +648,6 @@ input:checked + .slider:before {
   transform: rotate(90deg) scale(1.1);
 }
 
-/* Removed #toast and #toast.show styles from here */
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
@@ -959,10 +955,16 @@ input:checked + .slider:before {
 /* --- NEW ANNOUNCEMENT NOTIFICATION BAR --- */
 #new-announcement-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  border-radius: 25px;
+  top: 10px; /* Add space from the top */
+  left: 50%;
+  /* Center the notification and start it off-screen */
+  transform: translateX(-50%) translateY(-150%); 
+  
+  width: auto; /* Let content decide width */
+  max-width: 90%; /* Responsive: won't touch screen edges */
+  box-sizing: border-box; /* Include padding in width calculation */
+
+  border-radius: 25px; /* This creates the pill shape */
   background-color: var(--secondary-color);
   color: white;
   padding: 12px 20px;
@@ -973,8 +975,6 @@ input:checked + .slider:before {
   font-size: 1rem;
   text-align: center;
   
-  /* Animation: Start hidden */
-  transform: translateY(-100%);
   opacity: 0;
   visibility: hidden;
   transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
@@ -983,8 +983,8 @@ input:checked + .slider:before {
 }
 
 #new-announcement-bar.show {
-  /* Animation: Slide in */
-  transform: translateY(0);
+  /* Animation: Slide in to the top-center */
+  transform: translateX(-50%) translateY(0);
   opacity: 1;
   visibility: visible;
 }
