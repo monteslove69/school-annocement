@@ -314,12 +314,12 @@ if (window.location.pathname.includes("admin.html")) {
     const logoutBtn = document.getElementById("logoutBtn");
     const postBtn = document.getElementById("postBtn");
 
+    // === MODIFIED ===
+    // Removed the else block and startScheduledProcessor() call
     auth.onAuthStateChanged((user) => {
         if (!user) {
             alert("⚠️ Please log in first!");
             window.location.href = "index.html";
-        } else {
-            startScheduledProcessor();
         }
     });
 
@@ -913,9 +913,6 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(error => alert('❌ Error loading announcement: ' + error.message));
     }
 
-    // ===================================
-    // === FUNCTION: FIXED ===
-    // ===================================
     function deleteAnnouncement(id, category) {
         if (confirm('Are you sure you want to delete this announcement?')) {
             
@@ -1080,78 +1077,11 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(err => alert('❌ Error cancelling scheduled announcement: ' + err.message));
     }
 
-    let _scheduledProcessorInterval = null;
+    // === DELETED ===
+    // let _scheduledProcessorInterval = null;
 
-    function startScheduledProcessor(intervalSeconds = 5) {
-        if (_scheduledProcessorInterval) return;
-
-        const run = () => {
-            const nowISO = new Date().toISOString();
-
-            db.ref('scheduled_announcements').orderByChild('scheduledAt').endAt(nowISO).once('value')
-                .then(snapshot => {
-                    if (!snapshot.exists()) return;
-
-                    const tasks = [];
-                    snapshot.forEach(child => {
-                        const key = child.key;
-                        const data = child.val();
-                        
-                        const postData = { ...data };
-                        delete postData.scheduledAt;
-                        postData.timestamp = new Date().toISOString();
-                        postData.scheduledFrom = data.scheduledAt;
-
-                        // New logic to handle Facebook ID and Type
-                        const p = (async () => {
-                            let fbPostId = null;
-                            let fbPostType = null; // <-- Add this
-                            if (postData.postToFacebook) {
-                                try {
-                                    const fbResult = await postToFacebookAPI(postData);
-                                    if (fbResult && fbResult.id) {
-                                        fbPostId = fbResult.id;
-                                        fbPostType = fbResult.type; // <-- Save the type
-                                    }
-                                    console.log(`Scheduled post ${key} also posted to Facebook.`);
-                                } catch (fbError) {
-                                    console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
-                                }
-                            }
-                            
-                            postData.fbPostId = fbPostId; // Add the ID (or null)
-                            postData.fbPostType = fbPostType; // <-- Add the Type (or null)
-
-                            const postRef = db.ref('announcements/' + data.category).push();
-                            await postRef.set(postData); // Save complete data
-                            
-                            return db.ref('scheduled_announcements/' + key).remove(); // Clean up
-                        })();
-
-                        tasks.push(p); 
-                    });
-                    return Promise.all(tasks);
-                })
-                .then((tasks) => {
-                    if (tasks && tasks.length > 0) {
-                        const manageModal = document.getElementById('manageModal');
-                        if (manageModal && manageModal.classList.contains('show')) {
-                            const filterCategoryEl = document.getElementById('filterCategory');
-                            const categoryToLoad = filterCategoryEl ? filterCategoryEl.value : 'All';
-                            loadAnnouncements(categoryToLoad);
-                            loadScheduledAnnouncements();
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.warn('Scheduled processor error:', err.message || err);
-                });
-        };
-
-        run();
-        _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
-        console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
-    }
+    // === DELETED ===
+    // function startScheduledProcessor(intervalSeconds = 5) { ... }
 
     async function uploadFileToCloudinary(file, signal) {
         const CLOUD_NAME = "dr65ufuol";
