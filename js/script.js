@@ -18,10 +18,122 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 /*
-================================================
-  GLOBAL FACEBOOK API FUNCTIONS (Correct Scope)
-================================================
+===============================================
+  LOGIN LOGIC (for index.html)
+===============================================
 */
+const loginBtn = document.getElementById("loginBtn");
+if (loginBtn) {
+    const emailEl = document.getElementById('email');
+    const passwordEl = document.getElementById('password');
+    const emailErrorEl = document.getElementById('emailError');
+    const passwordErrorEl = document.getElementById('passwordError');
+    const loginErrorEl = document.getElementById('loginError');
+    const loginSuccessEl = document.getElementById('loginSuccess');
+
+    function clearErrors() {
+        if (emailErrorEl) emailErrorEl.textContent = '';
+        if (passwordErrorEl) passwordErrorEl.textContent = '';
+        if (loginErrorEl) {
+            loginErrorEl.style.display = 'none';
+            loginErrorEl.textContent = '';
+        }
+        if (loginSuccessEl) {
+            loginSuccessEl.style.display = 'none';
+            loginSuccessEl.textContent = '';
+            loginSuccessEl.classList.remove('show');
+        }
+        if (emailEl) emailEl.classList.remove('error');
+        if (passwordEl) passwordEl.classList.remove('error');
+    }
+
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    [emailEl, passwordEl].forEach((el) => {
+        if (!el) return;
+        el.addEventListener('input', () => {
+            clearErrors();
+        });
+    });
+
+    loginBtn.addEventListener('click', () => {
+        clearErrors();
+        const email = emailEl.value.trim();
+        const password = passwordEl.value.trim();
+        let hasError = false;
+        if (!email) {
+            emailErrorEl.textContent = 'Please enter your email.';
+            emailEl.classList.add('error');
+            hasError = true;
+        } else if (!isValidEmail(email)) {
+            emailErrorEl.textContent = 'Please enter a valid email address.';
+            emailEl.classList.add('error');
+            hasError = true;
+        }
+        if (!password) {
+            passwordErrorEl.textContent = 'Please enter your password.';
+            passwordEl.classList.add('error');
+            hasError = true;
+        } else if (password.length < 6) {
+            passwordErrorEl.textContent = 'Password must be at least 6 characters.';
+            passwordEl.classList.add('error');
+            hasError = true;
+        }
+        if (hasError) return;
+
+        loginBtn.disabled = true;
+        const originalText = loginBtn.innerHTML;
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                if (loginSuccessEl) {
+                    loginSuccessEl.textContent = '✅ Login successful — redirecting...';
+                    loginSuccessEl.style.display = 'block';
+                    setTimeout(() => loginSuccessEl.classList.add('show'), 20);
+                }
+                setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 900);
+            })
+            .catch((error) => {
+                const code = error.code || '';
+                let message = 'Login failed. Please try again.';
+                
+                if (code === 'auth/invalid-credential' || code.indexOf('invalid-login-credentials') !== -1) {
+                    message = 'Invalid email or password. Please try again.';
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                    emailEl.classList.add('error');
+                    passwordEl.classList.add('error');
+                } else if (code.indexOf('invalid-email') !== -1) {
+                    message = 'That email address is invalid.';
+                    emailEl.classList.add('error');
+                    emailErrorEl.textContent = message;
+                } else if (code.indexOf('too-many-requests') !== -1) {
+                    message = 'Too many failed attempts. Please try again later.';
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                } else if (code.indexOf('user-disabled') !== -1) {
+                    message = 'This user account has been disabled.';
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                } else {
+                    console.error("Firebase Login Error:", error);
+                    message = 'An unexpected error occurred. Please try again.';
+                    loginErrorEl.textContent = message;
+                    loginErrorEl.style.display = 'block';
+                }
+                
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = originalText;
+            });
+    });
+}
+
+// --- GLOBAL FACEBOOK API FUNCTIONS ---
 
 async function postToFacebookAPI(announcementData) {
     // !!! SECURITY WARNING: Token is embedded in client-side code !!!
@@ -132,6 +244,49 @@ async function deletePostOnFacebookAPI(fbPostId) {
     }
 }
 
+// --- DARK MODE SYNC FUNCTIONS (From main.js) ---
+const DARK_MODE_KEY = 'schoolconnect-dark-mode'; 
+
+function applyDarkMode(isDark) {
+    const body = document.body;
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    if (isDark) {
+        body.classList.add('dark-mode');
+        if (darkModeToggle) darkModeToggle.checked = true;
+    } else {
+        body.classList.remove('dark-mode');
+        if (darkModeToggle) darkModeToggle.checked = false;
+    }
+}
+
+function saveDarkModePreference(isDark) {
+    localStorage.setItem(DARK_MODE_KEY, isDark ? 'enabled' : 'disabled');
+}
+
+function initDarkMode() {
+    const savedMode = localStorage.getItem(DARK_MODE_KEY);
+    const body = document.body;
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+    if (savedMode === 'enabled') {
+        applyDarkMode(true);
+    } else if (savedMode === 'disabled') {
+        applyDarkMode(false);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        applyDarkMode(true); // Default to system preference if no local setting
+    } else {
+        applyDarkMode(false);
+    }
+    
+    // Attach listener after initial load
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', () => {
+            const isDark = darkModeToggle.checked;
+            applyDarkMode(isDark);
+            saveDarkModePreference(isDark);
+        });
+    }
+}
 
 /*
 ===============================================
@@ -140,41 +295,17 @@ async function deletePostOnFacebookAPI(fbPostId) {
 */
 if (window.location.pathname.includes("admin.html")) {
 
+    // Initialize Dark Mode immediately when the admin page starts
+    initDarkMode();
+
     let filesToUpload = [];
     let uploadAbortController = null; 
     
     let editFilesToKeep = [];
     let editFilesToUpload = [];
 
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    const body = document.body;
-    const DARK_MODE_KEY = 'schoolconnect-dark-mode'; 
-
-    function applyDarkMode(isDark) {
-        if (isDark) {
-            body.classList.add('dark-mode');
-            if (darkModeToggle) darkModeToggle.checked = true;
-        } else {
-            body.classList.remove('dark-mode');
-            if (darkModeToggle) darkModeToggle.checked = false;
-        }
-    }
-
-    function saveDarkModePreference(isDark) {
-        localStorage.setItem(DARK_MODE_KEY, isDark ? 'true' : 'false');
-    }
-
-    const savedPreference = localStorage.getItem(DARK_MODE_KEY);
-    let isDark = savedPreference === 'true';
-    applyDarkMode(isDark);
-
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('change', () => {
-            isDark = darkModeToggle.checked;
-            applyDarkMode(isDark);
-            saveDarkModePreference(isDark);
-        });
-    }
+    const logoutBtn = document.getElementById("logoutBtn");
+    const postBtn = document.getElementById("postBtn");
 
     auth.onAuthStateChanged((user) => {
         if (!user) {
@@ -185,16 +316,15 @@ if (window.location.pathname.includes("admin.html")) {
         }
     });
 
-    const postBtn = document.getElementById("postBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
     if (postBtn) {
         addPostButtonListener(postBtn);
     }
-
+    
     const scheduleToggleEl = document.getElementById('scheduleToggle');
     const scheduleAtEl = document.getElementById('scheduleAt');
     const datetimeWrapper = document.getElementById('datetimeWrapper');
     const clearScheduleBtn = document.getElementById('clearSchedule');
+
     if (scheduleToggleEl && datetimeWrapper && scheduleAtEl) {
         const setWrapper = (show) => {
             if (show) {

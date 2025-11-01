@@ -51,22 +51,30 @@ const closeLoginBtn = document.getElementById("close-login-btn");
 let announcements = [];
 let wasSearchModalActive = false;
 
+// --- DARK MODE KEY SYNCHRONIZATION FIX ---
+const DARK_MODE_KEY = 'schoolconnect-dark-mode'; 
+
 function enableDarkMode() {
   body.classList.add('dark-mode');
-  localStorage.setItem('darkMode', 'enabled');
+  localStorage.setItem(DARK_MODE_KEY, 'enabled');
 }
 
 function disableDarkMode() {
   body.classList.remove('dark-mode');
-  localStorage.setItem('darkMode', 'disabled');
+  localStorage.setItem(DARK_MODE_KEY, 'disabled');
 }
 
 function initDarkMode() {
-  const savedMode = localStorage.getItem('darkMode');
+  const savedMode = localStorage.getItem(DARK_MODE_KEY);
+  
   if (savedMode === 'enabled') {
     enableDarkMode();
     darkModeToggle.checked = true;
-  } else if (savedMode === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  } else if (savedMode === 'disabled') {
+    disableDarkMode();
+    darkModeToggle.checked = false;
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    // Default to system preference if no local setting
     enableDarkMode();
     darkModeToggle.checked = true;
   } else {
