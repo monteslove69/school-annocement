@@ -24,7 +24,7 @@ const auth = firebase.auth();
 */
 const announcementsDiv = document.getElementById("announcements");
 const filterSelect = document.getElementById("filter");
-const toast = document.getElementById("toast");
+// const toast = document.getElementById("toast"); // Removed old toast
 const pinnedToggle = document.getElementById("pinned-toggle");
 const darkModeToggle = document.getElementById("dark-mode-toggle");
 const body = document.body;
@@ -113,25 +113,44 @@ function togglePin(id) {
   updateLargePinButton(id);
 }
 
-function showToast() {
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 3000);
+/**
+ * NEW: Shows the top slide-down notification bar.
+ */
+function showNewAnnouncement(title) {
+  const bar = document.getElementById('new-announcement-bar');
+  const msgEl = document.getElementById('notification-message');
+  
+  if (!bar || !msgEl) {
+    console.error("Notification bar elements not found!");
+    return;
+  }
+
+  // Find the span inside the message to set the title
+  const titleSpan = msgEl.querySelector('span');
+  if (titleSpan) {
+      titleSpan.textContent = title;
+  }
+  
+  bar.classList.add('show');
+
+  // Hide the notification after 4 seconds
+  setTimeout(() => {
+    bar.classList.remove('show');
+  }, 4000);
 }
 
-db.ref("announcements").on("value", (snapshot) => {
-  const newData = [];
+// === NEW, EFFICIENT FIREBASE LISTENER ===
+
+// 1. Load all existing announcements ONCE
+db.ref("announcements").once("value", (snapshot) => {
+  const allData = [];
   snapshot.forEach((categorySnap) => {
     const categoryVal = categorySnap.val();
-    if (categoryVal && categoryVal.title && categoryVal.message && categoryVal.category) {
-      newData.push({
-        id: categorySnap.key,
-        ...categoryVal 
-      });
-    } else if (categoryVal && typeof categoryVal === 'object') {
+    if (categoryVal && typeof categoryVal === 'object') {
       categorySnap.forEach((postSnap) => {
         const post = postSnap.val();
         if (post && post.title && post.message) {
-          newData.push({
+          allData.push({
             id: postSnap.key,
             ...post 
           });
@@ -139,12 +158,45 @@ db.ref("announcements").on("value", (snapshot) => {
       });
     }
   });
-  if (announcements.length && newData.length > announcements.length) {
-    showToast();
-  }
-  announcements = newData;
+  
+  announcements = allData;
   displayAnnouncements(announcementsDiv, applyFilters(announcements, filterSelect.value, null, pinnedToggle.checked), filterSelect.value, pinnedToggle.checked);
+
+  // 2. Now, set up the REAL-TIME listener for NEW posts
+  listenForNewAnnouncements();
 });
+
+// This new function will handle the notification
+function listenForNewAnnouncements() {
+  let lastKnownTimestamp = new Date().toISOString();
+  const categories = ['General', 'Events', 'Exams', 'Reminders', 'Urgent'];
+
+  categories.forEach(category => {
+    const ref = db.ref(`announcements/${category}`)
+                    .orderByChild('timestamp')
+                    .startAt(lastKnownTimestamp);
+    
+    ref.on('child_added', (snapshot) => {
+      const newPost = { id: snapshot.key, ...snapshot.val() };
+
+      // Check if we already have this post (to avoid double-notify)
+      if (!announcements.some(post => post.id === newPost.id)) {
+        
+        // Show the notification!
+        showNewAnnouncement(newPost.title);
+        
+        // Add to our local array and re-display
+        announcements.push(newPost);
+        displayAnnouncements(announcementsDiv, applyFilters(announcements, filterSelect.value, null, pinnedToggle.checked), filterSelect.value, pinnedToggle.checked);
+
+        // Update the timestamp to the newest post
+        lastKnownTimestamp = newPost.timestamp;
+      }
+    });
+  });
+}
+// === END OF NEW LISTENER ===
+
 
 function applyFilters(data, categoryFilter, searchTerm, showPinned) {
   const pinnedIds = getPinnedAnnouncements();

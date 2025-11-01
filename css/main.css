@@ -651,31 +651,8 @@ input:checked + .slider:before {
   transform: rotate(90deg) scale(1.1);
 }
 
-#toast {
-  position: fixed;
-  bottom: -80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--secondary-color);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 119, 255, 0.8);
-  font-weight: bold;
-  font-size: 1em;
-  transition: bottom 0.6s ease, opacity 0.6s ease, background 0.5s;
-  opacity: 0;
-  z-index: 9999;
-  width: auto;
-  max-width: 90%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#toast.show {
-  bottom: 90px;
-  opacity: 1;
-}
+/* Removed #toast and #toast.show styles from here */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -974,11 +951,53 @@ input:checked + .slider:before {
     max-width: 450px;
   }
 
-  #toast.show {
-    bottom: 30px;
-  }
-
   .dark-mode-toggle-wrapper {
     padding: 10px 0 0 20px;
   }
+}
+
+/* --- NEW ANNOUNCEMENT NOTIFICATION BAR --- */
+#new-announcement-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-radius: 25px;
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9998; /* Just below overlays */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  
+  /* Animation: Start hidden */
+  transform: translateY(-100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+              opacity 0.5s ease, 
+              visibility 0.5s;
+}
+
+#new-announcement-bar.show {
+  /* Animation: Slide in */
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+#new-announcement-bar p {
+  margin: 0;
+  padding: 0;
+}
+
+#new-announcement-bar p span {
+  font-weight: 700; /* Bolder title */
+}
+
+.dark-mode #new-announcement-bar {
+    background-color: var(--primary-color);
 }
