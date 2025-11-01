@@ -1000,4 +1000,23 @@ input:checked + .slider:before {
 .dark-mode .schedule-toggle.fb-toggle {
   color: #8b9dc3; /* Lighter Facebook color for dark mode */
 }
-/* --- END OF NEW STYLES --- */
+
+/* --- MODAL HEADING STYLES --- */
+.modal-body h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  color: var(--secondary-color);
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 5px;
+  text-align: left;
+}
+
+/* Make the first h3 (Scheduled) have less top margin */
+.modal-body h3:first-of-type {
+  margin-top: 15px;
+}
+
+.dark-mode .modal-body h3 {
+  color: var(--primary-color);
+  border-bottom: 1px solid var(--glass-border);
+}
