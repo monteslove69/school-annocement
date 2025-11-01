@@ -24,7 +24,6 @@ const auth = firebase.auth();
 */
 const announcementsDiv = document.getElementById("announcements");
 const filterSelect = document.getElementById("filter");
-// const toast = document.getElementById("toast"); // Removed old toast
 const pinnedToggle = document.getElementById("pinned-toggle");
 const darkModeToggle = document.getElementById("dark-mode-toggle");
 const body = document.body;
@@ -261,35 +260,35 @@ function displayAnnouncements(container, filteredData, categoryFilter, showPinne
         if (imageCount > 0) {
             let gridClass = `grid-count-${imageCount}`;
             if (imageCount >= 3) {
-                gridClass = 'grid-count-3-plus'; 
+                gridClass = 'grid-count-3-plus';  
             }
 
             imagesHTML = `<div class="attachments-grid ${gridClass}">`;
             
             if (imageCount === 1) {
                 imagesHTML += `<div class="announcement-image-wrapper">
-                                 <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
-                               </div>`;
+                                  <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
+                                </div>`;
             } else if (imageCount === 2) {
                 imagesHTML += `<div class="announcement-image-wrapper">
-                                 <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
-                               </div>
-                               <div class="announcement-image-wrapper">
-                                 <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
-                               </div>`;
+                                  <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
+                                </div>
+                                <div class="announcement-image-wrapper">
+                                  <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
+                                </div>`;
             } else if (imageCount >= 3) {
                 imagesHTML += `<div class="announcement-image-wrapper">
-                                 <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
-                               </div>
-                               <div class="announcement-image-wrapper">
-                                 <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
-                               </div>`;
+                                  <img src="${images[0].downloadURL}" alt="${images[0].fileName}" class="announcement-image">
+                                </div>
+                                <div class="announcement-image-wrapper">
+                                  <img src="${images[1].downloadURL}" alt="${images[1].fileName}" class="announcement-image">
+                                </div>`;
                 
                 const moreCount = imageCount - 2;
                 imagesHTML += `<div class="announcement-image-wrapper more-images-wrapper">
-                                 <img src="${images[2].downloadURL}" alt="${images[2].fileName}" class="announcement-image">
-                                 <div class="more-images-overlay">+${moreCount}</div>
-                               </div>`;
+                                  <img src="${images[2].downloadURL}" alt="${images[2].fileName}" class="announcement-image">
+                                  <div class="more-images-overlay">+${moreCount}</div>
+                                </div>`;
             }
             imagesHTML += `</div>`;
         }
@@ -343,7 +342,7 @@ function openFullScreen(data) {
   largeCategory.className = `category category-${(data.category || 'unknown').toLowerCase()}`;
   
   const largeAttachmentEl = document.getElementById('large-attachment');
-  largeAttachmentEl.innerHTML = ''; 
+  largeAttachmentEl.innerHTML = '';  
   
   if (data.attachments && data.attachments.length > 0) {
       let imagesHTML = '';
@@ -365,13 +364,13 @@ function openFullScreen(data) {
           largeAttachmentEl.innerHTML += `<div class="attachment-container">${filesHTML}</div>`;
       }
       if (imagesHTML) {
-          largeAttachmentEl.innerHTML += imagesHTML; 
+          largeAttachmentEl.innerHTML += imagesHTML;  
       }
   }
 
   updateLargePinButton(data.id);
   searchOverlay.classList.remove('active');
-  loginOverlay.classList.remove('active'); 
+  loginOverlay.classList.remove('active');  
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -391,8 +390,8 @@ function closeFullScreen() {
 }
 
 function openSearchModal() {
-  overlay.classList.remove('active'); 
-  loginOverlay.classList.remove('active'); 
+  overlay.classList.remove('active');  
+  loginOverlay.classList.remove('active');  
   searchOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   modalSearchInput.focus();
@@ -413,12 +412,12 @@ function performSearch() {
 }
 
 function openLoginModal() {
-  searchOverlay.classList.remove('active'); 
-  overlay.classList.remove('active'); 
+  searchOverlay.classList.remove('active');  
+  overlay.classList.remove('active');  
   loginOverlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   const emailInput = document.getElementById('email');
-  if(emailInput) emailInput.focus(); 
+  if(emailInput) emailInput.focus();  
 }
 
 function closeLoginModal() {
@@ -436,6 +435,15 @@ openSearchBtn.addEventListener('click', (e) => {
 });
 closeSearchBtn.addEventListener('click', closeSearchModal);
 modalSearchInput.addEventListener("input", performSearch);
+
+// --- NEW CODE TO DISMISS KEYBOARD ON ENTER ---
+modalSearchInput.addEventListener("keydown", (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Stop any default "Enter" behavior (like form submit)
+    e.target.blur();    // This tells the input to lose focus, which hides the keyboard
+  }
+});
+// --- END NEW CODE ---
 
 if (openLoginBtn) {
   openLoginBtn.addEventListener('click', (e) => {
@@ -471,10 +479,10 @@ document.addEventListener('click', (e) => {
     } catch (error) {
       console.error("Error parsing ID for pinning:", error);
     }
-    e.stopPropagation(); 
-  } 
+    e.stopPropagation();  
+  }  
   else if (e.target.closest('a')) {
-    e.stopPropagation(); 
+    e.stopPropagation();  
   }
   else {
     try {
@@ -616,7 +624,7 @@ if (loginBtn) {
                     loginErrorEl.textContent = message;
                     loginErrorEl.style.display = 'block';
                 } else {
-                    console.error("Firebase Login Error:", error); 
+                    console.error("Firebase Login Error:", error);  
                     message = 'An unexpected error occurred. Please try again.';
                     loginErrorEl.textContent = message;
                     loginErrorEl.style.display = 'block';
