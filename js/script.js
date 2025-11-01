@@ -264,7 +264,6 @@ function initDarkMode() {
 */
 if (window.location.pathname.includes("admin.html")) {
 
-    // Initialize Dark Mode immediately when the admin page starts
     initDarkMode();
 
     let filesToUpload = [];
@@ -276,7 +275,6 @@ if (window.location.pathname.includes("admin.html")) {
     const logoutBtn = document.getElementById("logoutBtn");
     const postBtn = document.getElementById("postBtn");
 
-    // Cleaned up: No more client-side scheduler
     auth.onAuthStateChanged((user) => {
         if (!user) {
             alert("⚠️ Please log in first!");
@@ -502,6 +500,7 @@ if (window.location.pathname.includes("admin.html")) {
             });
     }
 
+    // --- MODIFIED: displayAnnouncement (Single Edit/Delete buttons) ---
     function displayAnnouncement(id, data) {
         const announcementsList = document.getElementById('announcements-list');
         if (!announcementsList) return; 
@@ -570,26 +569,11 @@ if (window.location.pathname.includes("admin.html")) {
                 attachmentHTML += `<div class="attachment-container">${filesHTML}</div>`;
             }
         }
-
-        // --- NEW DELETE BUTTON LOGIC ---
-        // Always show the local delete button
-        const localDeleteBtn = `
-            <button class="delete-btn" onclick="deleteAnnouncementFirebase('${id}', '${data.category}')">
-                <i class="fas fa-trash"></i> Delete (Local)
-            </button>
-        `;
         
-        // Only show the Facebook delete button if a fbPostId exists
-        let fbDeleteBtn = '';
-        if (data.fbPostId) {
-            fbDeleteBtn = `
-                <button class="delete-btn-fb" onclick="deleteAnnouncementFacebook('${id}', '${data.category}', '${data.fbPostId}')">
-                    <i class="fab fa-facebook"></i> Delete (FB)
-                </button>
-            `;
-        }
-        // --- END NEW DELETE BUTTON LOGIC ---
-
+        // Escape single quotes in string parameters for onclick
+        const fbPostId = data.fbPostId ? data.fbPostId.replace(/'/g, "\\'") : '';
+        const fbPostType = data.fbPostType ? data.fbPostType.replace(/'/g, "\\'") : '';
+        
         div.innerHTML = `
             <div class="announcement-header">
                 <div class="announcement-title">${data.title}</div>
@@ -603,17 +587,19 @@ if (window.location.pathname.includes("admin.html")) {
             ${attachmentHTML} 
             
             <div class="announcement-actions">
-                <button class="edit-btn" onclick="editAnnouncement('${id}', '${data.category}')">
+                <button class="edit-btn" onclick="openEditModal('${id}', '${data.category}', '${fbPostId}', '${fbPostType}')">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                ${localDeleteBtn}
-                ${fbDeleteBtn}
+                <button class="delete-btn" onclick="openDeleteModal('${id}', '${data.category}', '${fbPostId}')">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
             </div>
         `;
         announcementsList.appendChild(div);
     }
-
-    function editAnnouncement(id, category) {
+    
+    // --- MODIFIED: editAnnouncement now accepts a 'mode' ---
+    function editAnnouncement(id, category, mode = 'both') {
         db.ref(`announcements/${category}/${id}`).once('value')
             .then((snapshot) => {
                 const data = snapshot.val();
@@ -645,13 +631,13 @@ if (window.location.pathname.includes("admin.html")) {
                 editUploadStatus.textContent = '';
                 
                 const originalFbPostId = data.fbPostId || null;
-                const originalFbPostType = data.fbPostType || 'feed'; // <-- Get the post type
+                const originalFbPostType = data.fbPostType || 'feed'; 
 
                 const renderEditFilePreviews = () => {
                     editFilePreview.innerHTML = '';
                     editNewFilePreview.innerHTML = '';
 
-                    // 1. Render existing files (editFilesToKeep)
+                    // 1. Render existing files
                     editFilesToKeep.forEach((file, index) => {
                         const previewWrapper = document.createElement('div');
                         previewWrapper.className = 'file-preview';
@@ -683,7 +669,7 @@ if (window.location.pathname.includes("admin.html")) {
                         editFilePreview.appendChild(previewWrapper);
                     });
 
-                    // 2. Render new files to upload (editFilesToUpload)
+                    // 2. Render new files
                     editFilesToUpload.forEach((file, index) => {
                         const previewWrapper = document.createElement('div');
                         previewWrapper.className = 'file-preview';
@@ -754,7 +740,8 @@ if (window.location.pathname.includes("admin.html")) {
                 };
                 document.addEventListener('keydown', escHandler);
                 
-                const handleUpdate = async () => {
+                // --- MODIFIED: handleUpdate now accepts a 'mode' ---
+                const handleUpdate = async (mode) => {
                     const title = editTitle.value.trim();
                     const message = editMessage.value.trim();
                     const newCategory = editCategory.value;
@@ -807,27 +794,24 @@ if (window.location.pathname.includes("admin.html")) {
                         lastEdited: new Date().toISOString(),
                         attachments: finalAttachments,
                         fbPostId: currentFbPostId,
-                        fbPostType: originalFbPostType // <-- Persist the post type
+                        fbPostType: originalFbPostType 
                     };
                     
-                    // --- FACEBOOK UPDATE LOGIC START ---
+                    // --- MODIFIED: Only run FB logic if mode is 'both' ---
                     let fbUpdatePromise = Promise.resolve();
-
-                    if (currentFbPostId && originalFbPostType.startsWith('photo')) { // Check if 'photo' or 'photo_album'
-                        // This is a photo post. We cannot edit it.
-                        console.warn('This is a photo post. Skipping Facebook update as it is not supported by the API for URL-based photos.');
-                        
-                    } else if (currentFbPostId) {
-                        // This is a 'feed' post, so we can try to edit it.
-                        const newPostData = { title, message, attachments: finalAttachments };
-                        fbUpdatePromise = updatePostOnFacebookAPI(currentFbPostId, newPostData)
-                            .catch(fbError => {
-                                console.error('Facebook Edit Failed:', fbError);
-                                alert(`⚠️ Warning: Announcement saved, but failed to update on Facebook: ${fbError.message}`);
-                            });
+                    if (mode === 'both') { 
+                        if (currentFbPostId && originalFbPostType.startsWith('photo')) { 
+                            console.warn('This is a photo post. Skipping Facebook update as it is not supported by the API for URL-based photos.');
+                        } else if (currentFbPostId) {
+                            const newPostData = { title, message, attachments: finalAttachments };
+                            fbUpdatePromise = updatePostOnFacebookAPI(currentFbPostId, newPostData)
+                                .catch(fbError => {
+                                    console.error('Facebook Edit Failed:', fbError);
+                                    alert(`⚠️ Warning: Announcement saved, but failed to update on Facebook: ${fbError.message}`);
+                                });
+                        }
                     }
-                    // --- FACEBOOK UPDATE LOGIC END ---
-
+                    // --- END MODIFICATION ---
 
                     if (newCategory !== category) {
                         const oldRef = db.ref(`announcements/${category}/${id}`);
@@ -839,11 +823,11 @@ if (window.location.pathname.includes("admin.html")) {
                         ])
                             .then(() => oldRef.remove())
                             .then(() => {
-                                if (currentFbPostId && originalFbPostType.startsWith('photo')) {
-                                    alert('✅ Announcement updated and moved in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
-                                } else {
-                                    alert('✅ Announcement updated and moved to new category!');
+                                let alertMessage = '✅ Announcement updated and moved to new category!';
+                                if (mode === 'both' && currentFbPostId && originalFbPostType.startsWith('photo')) {
+                                     alertMessage = '✅ Announcement updated and moved in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)';
                                 }
+                                alert(alertMessage);
                                 closeEditForm();
                                 loadAnnouncements(document.getElementById('filterCategory').value);
                             })
@@ -854,11 +838,11 @@ if (window.location.pathname.includes("admin.html")) {
                             db.ref(`announcements/${category}/${id}`).update(updates)
                         ])
                             .then(() => {
-                                if (currentFbPostId && originalFbPostType.startsWith('photo')) {
-                                    alert('✅ Announcement updated in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
-                                } else {
-                                    alert('✅ Announcement updated!');
+                                let alertMessage = '✅ Announcement updated!';
+                                 if (mode === 'both' && currentFbPostId && originalFbPostType.startsWith('photo')) {
+                                     alertMessage = '✅ Announcement updated in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)';
                                 }
+                                alert(alertMessage);
                                 closeEditForm();
                                 loadAnnouncements(document.getElementById('filterCategory').value);
                             })
@@ -869,7 +853,8 @@ if (window.location.pathname.includes("admin.html")) {
                     updateBtn.innerHTML = '<i class="fas fa-save"></i> Update Announcement';
                 };
                 
-                updateBtn.onclick = handleUpdate;
+                // --- MODIFIED: Pass mode to handleUpdate ---
+                updateBtn.onclick = () => handleUpdate(mode);
                 
                 const cleanup = () => {
                     document.removeEventListener('keydown', escHandler);
@@ -892,46 +877,217 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(error => alert('❌ Error loading announcement: ' + error.message));
     }
 
-    /**
-     * NEW: Deletes an announcement from Firebase ONLY.
-     */
-    function deleteAnnouncementFirebase(id, category) {
-        if (confirm('Are you sure you want to delete this announcement from the app (Firebase)?\n\nThis will NOT delete the post from Facebook.')) {
+    // --- NEW: Delete Choice Modal Logic ---
+    const deleteChoiceModal = document.getElementById('deleteChoiceModal');
+    const closeDeleteChoiceModal = document.getElementById('closeDeleteChoiceModal');
+    const deleteLocalBtn = document.getElementById('deleteLocalBtn');
+    const deleteFbBtn = document.getElementById('deleteFbBtn');
+    const deleteBothBtn = document.getElementById('deleteBothBtn');
+
+    function openDeleteModal(id, category, fbPostId) {
+        if (!fbPostId) {
+            // No FB post, just do a simple local delete
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                deleteAnnouncementFirebase(id, category);
+            }
+        } else {
+            // Has a FB post, show the choice modal
+            deleteChoiceModal.classList.add('show');
+            // Store data on buttons to be picked up by listeners
+            deleteLocalBtn.dataset.id = id;
+            deleteLocalBtn.dataset.category = category;
             
-            db.ref(`announcements/${category}/${id}`).remove()
-                .then(() => {
-                    alert('✅ Announcement deleted from Firebase!');
-                    loadAnnouncements(document.getElementById('filterCategory').value);
-                })
-                .catch(error => alert('❌ Error deleting from Firebase: ' + error.message));
+            deleteFbBtn.dataset.id = id;
+            deleteFbBtn.dataset.category = category;
+            deleteFbBtn.dataset.fbPostId = fbPostId;
+
+            deleteBothBtn.dataset.id = id;
+            deleteBothBtn.dataset.category = category;
+            deleteBothBtn.dataset.fbPostId = fbPostId;
         }
     }
 
-    /**
-     * NEW: Deletes a post from Facebook ONLY and updates the local record.
-     */
-    function deleteAnnouncementFacebook(id, category, fbPostId) {
-        if (confirm('Are you sure you want to delete this post from Facebook?\n\nThis will NOT delete the announcement from the app.')) {
-            
-            deletePostOnFacebookAPI(fbPostId)
-                .then(() => {
-                    // Success! Now, remove the fbPostId from our local record
-                    // so the button disappears and we know it's gone.
-                    return db.ref(`announcements/${category}/${id}`).update({
-                        fbPostId: null,
-                        fbPostType: null
-                    });
-                })
-                .then(() => {
-                    alert('✅ Post deleted from Facebook!');
-                    loadAnnouncements(document.getElementById('filterCategory').value);
-                })
-                .catch(error => {
-                    console.error('Facebook Delete Failed:', error);
-                    alert(`❌ Error deleting from Facebook: ${error.message}`);
-                });
+    closeDeleteChoiceModal.onclick = () => deleteChoiceModal.classList.remove('show');
+    deleteLocalBtn.onclick = (e) => {
+        const { id, category } = e.currentTarget.dataset;
+        deleteAnnouncementFirebase(id, category);
+        deleteChoiceModal.classList.remove('show');
+    };
+    deleteFbBtn.onclick = (e) => {
+        const { id, category, fbPostId } = e.currentTarget.dataset;
+        deleteAnnouncementFacebook(id, category, fbPostId);
+        deleteChoiceModal.classList.remove('show');
+    };
+    deleteBothBtn.onclick = (e) => {
+        const { id, category, fbPostId } = e.currentTarget.dataset;
+        deleteBoth(id, category, fbPostId);
+        deleteChoiceModal.classList.remove('show');
+    };
+    // --- End Delete Choice Modal Logic ---
+
+
+    // --- NEW: Edit Choice Modal Logic ---
+    const editChoiceModal = document.getElementById('editChoiceModal');
+    const closeEditChoiceModal = document.getElementById('closeEditChoiceModal');
+    const editLocalBtn = document.getElementById('editLocalBtn');
+    const editFbTextBtn = document.getElementById('editFbTextBtn');
+    const editBothBtn = document.getElementById('editBothBtn');
+
+    function openEditModal(id, category, fbPostId, fbPostType) {
+        if (!fbPostId || fbPostType !== 'feed') {
+            // No FB post OR it's a photo post (cant edit text), just open local editor
+            editAnnouncement(id, category, 'local'); 
+        } else {
+            // Is a 'feed' post, show choices
+            editChoiceModal.classList.add('show');
+            editLocalBtn.dataset.id = id;
+            editLocalBtn.dataset.category = category;
+
+            editFbTextBtn.dataset.id = id;
+            editFbTextBtn.dataset.category = category;
+            editFbTextBtn.dataset.fbPostId = fbPostId;
+
+            editBothBtn.dataset.id = id;
+            editBothBtn.dataset.category = category;
         }
     }
+    closeEditChoiceModal.onclick = () => editChoiceModal.classList.remove('show');
+    editLocalBtn.onclick = (e) => {
+        const { id, category } = e.currentTarget.dataset;
+        editAnnouncement(id, category, 'local'); // Call with 'local' mode
+        editChoiceModal.classList.remove('show');
+    };
+    editFbTextBtn.onclick = (e) => {
+        const { id, category, fbPostId } = e.currentTarget.dataset;
+        openEditFbTextModal(id, category, fbPostId);
+        editChoiceModal.classList.remove('show');
+    };
+    editBothBtn.onclick = (e) => {
+        const { id, category } = e.currentTarget.dataset;
+        editAnnouncement(id, category, 'both'); // Call with 'both' mode
+        editChoiceModal.classList.remove('show');
+    };
+    // --- End Edit Choice Modal Logic ---
+
+
+    // --- NEW: Edit FB Text Modal Logic ---
+    const editFbTextModal = document.getElementById('editFbTextModal');
+    const editFbTitle = document.getElementById('editFbTitle');
+    const editFbMessage = document.getElementById('editFbMessage');
+    const updateFbTextBtn = document.getElementById('updateFbTextBtn');
+    const cancelEditFbTextBtn = document.getElementById('cancelEditFbTextBtn');
+    const closeEditFbTextModal = document.getElementById('closeEditFbTextModal');
+
+    async function openEditFbTextModal(id, category, fbPostId) {
+        // 1. Get current data from Firebase to pre-fill
+        try {
+            const snapshot = await db.ref(`announcements/${category}/${id}`).once('value');
+            const data = snapshot.val();
+            if (data) {
+                editFbTitle.value = data.title;
+                editFbMessage.value = data.message;
+            }
+        } catch (error) {
+            alert('Error fetching post data: ' + error.message);
+            return;
+        }
+
+        // 2. Show the modal
+        editFbTextModal.classList.add('show');
+
+        // 3. Set up the update button listener
+        updateFbTextBtn.onclick = async () => {
+            const newTitle = editFbTitle.value.trim();
+            const newMessage = editFbMessage.value.trim();
+            if (!newTitle || !newMessage) {
+                alert('Please fill in both title and message.');
+                return;
+            }
+
+            updateFbTextBtn.disabled = true;
+            updateFbTextBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+            try {
+                const newPostData = { title: newTitle, message: newMessage };
+                await updatePostOnFacebookAPI(fbPostId, newPostData);
+                
+                // Also update the local record so it matches
+                await db.ref(`announcements/${category}/${id}`).update({
+                    title: newTitle,
+                    message: newMessage,
+                    lastEdited: new Date().toISOString()
+                });
+                
+                alert('✅ Facebook post (and local record) updated!');
+                editFbTextModal.classList.remove('show');
+                loadAnnouncements(document.getElementById('filterCategory').value);
+
+            } catch (fbError) {
+                alert(`❌ Failed to update Facebook post: ${fbError.message}`);
+            }
+
+            updateFbTextBtn.disabled = false;
+            updateFbTextBtn.innerHTML = '<i class="fas fa-save"></i> Update Facebook Post';
+        };
+    }
+    cancelEditFbTextBtn.onclick = () => editFbTextModal.classList.remove('show');
+    closeEditFbTextModal.onclick = () => editFbTextModal.classList.remove('show');
+    // --- End Edit FB Text Modal Logic ---
+
+
+    // --- MODIFIED: Replaced single delete with 3 functions ---
+    function deleteAnnouncementFirebase(id, category) {
+        db.ref(`announcements/${category}/${id}`).remove()
+            .then(() => {
+                alert('✅ Announcement deleted from Firebase!');
+                loadAnnouncements(document.getElementById('filterCategory').value);
+            })
+            .catch(error => alert('❌ Error deleting from Firebase: ' + error.message));
+    }
+
+    function deleteAnnouncementFacebook(id, category, fbPostId) {
+        deletePostOnFacebookAPI(fbPostId)
+            .then(() => {
+                return db.ref(`announcements/${category}/${id}`).update({
+                    fbPostId: null,
+                    fbPostType: null
+                });
+            })
+            .then(() => {
+                alert('✅ Post deleted from Facebook!');
+                loadAnnouncements(document.getElementById('filterCategory').value);
+            })
+            .catch(error => {
+                console.error('Facebook Delete Failed:', error);
+                alert(`❌ Error deleting from Facebook: ${error.message}`);
+            });
+    }
+
+    async function deleteBoth(id, category, fbPostId) {
+        if (!confirm('Are you sure you want to delete this post from BOTH Facebook and the local app?')) {
+            return;
+        }
+        
+        try {
+            // 1. Try to delete from Facebook
+            await deletePostOnFacebookAPI(fbPostId);
+            alert('✅ Post deleted from Facebook.');
+        } catch (fbError) {
+            console.error('Facebook Delete Failed:', fbError);
+            alert(`⚠️ Warning: Failed to delete from Facebook, but will still try to delete locally. Error: ${fbError.message}`);
+        }
+        
+        try {
+            // 2. Delete from Firebase
+            await db.ref(`announcements/${category}/${id}`).remove();
+            alert('✅ Announcement deleted from Firebase!');
+        } catch (dbError) {
+            alert(`❌ Error deleting from Firebase: ${dbError.message}`);
+        }
+        
+        loadAnnouncements(document.getElementById('filterCategory').value);
+    }
+    // --- END DELETE MODIFICATIONS ---
 
 
     function loadScheduledAnnouncements() {
@@ -1015,16 +1171,15 @@ if (window.location.pathname.includes("admin.html")) {
                 postData.timestamp = new Date().toISOString(); 
                 postData.scheduledFrom = data.scheduledAt; 
 
-                // New logic to handle Facebook ID and Type
                 const p = (async () => {
                     let fbPostId = null;
-                    let fbPostType = null; // <-- Add this
+                    let fbPostType = null; 
                     if (postData.postToFacebook) {
                         try {
                             const fbResult = await postToFacebookAPI(postData);
                             if (fbResult && fbResult.id) {
                                 fbPostId = fbResult.id;
-                                fbPostType = fbResult.type; // <-- Save the type
+                                fbPostType = fbResult.type; 
                             }
                             console.log(`Scheduled post ${key} also posted to Facebook.`);
                         } catch (fbError) {
@@ -1032,13 +1187,13 @@ if (window.location.pathname.includes("admin.html")) {
                         }
                     }
                     
-                    postData.fbPostId = fbPostId; // Add the ID (or null)
-                    postData.fbPostType = fbPostType; // <-- Add the Type (or null)
+                    postData.fbPostId = fbPostId; 
+                    postData.fbPostType = fbPostType; 
 
                     const postRef = db.ref('announcements/' + data.category).push();
-                    await postRef.set(postData); // Save complete data
+                    await postRef.set(postData); 
                     
-                    return ref.remove(); // Clean up
+                    return ref.remove(); 
                 })();
                 return p;
             })
@@ -1088,6 +1243,7 @@ if (window.location.pathname.includes("admin.html")) {
         }
     }
 
+    // --- MODIFIED: addPostButtonListener (for new destination logic) ---
     function addPostButtonListener(postBtn) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
@@ -1101,22 +1257,17 @@ if (window.location.pathname.includes("admin.html")) {
             const scheduleAt = document.getElementById('scheduleAt').value;
             const uploadStatus = document.getElementById('uploadStatus');
             const cancelUploadBtn = document.getElementById('cancelUploadBtn');
-            
-            // --- MODIFIED ---
             const postDestination = document.getElementById('postDestination').value;
-            // --- END MODIFICATION ---
 
             if (!title || !message || !category) {
                 alert('⚠️ Please fill in all fields (Title, Message, and Category)!');
                 return;
             }
 
-            // --- MODIFIED ---
             if (scheduleToggle && postDestination === 'facebook') {
                 alert('⚠️ "Facebook Only" posts cannot be scheduled. Please post it now or choose another destination.');
                 return;
             }
-            // --- END MODIFICATION ---
 
             postBtn.disabled = true;
             postBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
@@ -1164,9 +1315,7 @@ if (window.location.pathname.includes("admin.html")) {
             } 
             
             uploadStatus.textContent = 'Saving post...';
-            // --- MODIFIED ---
             await saveAnnouncementToFirebase(announcementData, scheduleToggle, scheduleAt, postDestination);
-            // --- END MODIFICATION ---
             
             postBtn.disabled = false;
             postBtn.innerHTML = 'Post Announcement';
@@ -1180,6 +1329,7 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
+    // --- MODIFIED: saveAnnouncementToFirebase (for new destination logic) ---
     async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime, postDestination) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
@@ -1202,7 +1352,7 @@ if (window.location.pathname.includes("admin.html")) {
                 const scheduledData = {
                     ...dataToSave,
                     scheduledAt: scheduledAtDate.toISOString(),
-                    postToFacebook: postToFacebook
+                    postToFacebook: postToFacebook 
                 };
 
                 await db.ref('scheduled_announcements').push(scheduledData);

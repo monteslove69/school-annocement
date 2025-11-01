@@ -403,7 +403,6 @@ button {
   gap: 10px;
 }
 
-/* === MODIFIED: Added .delete-btn-fb === */
 .edit-btn, .delete-btn, .delete-btn-fb {
   width: auto;
   padding: 6px 12px;
@@ -420,7 +419,7 @@ button {
 }
 
 .delete-btn-fb {
-  background-color: #0866FF; /* Facebook Blue */
+  background-color: #0866FF; 
   color: white;
 }
 
@@ -428,7 +427,6 @@ button {
   transform: translateY(-2px);
   opacity: 0.9;
 }
-/* === END MODIFICATION === */
 
 
 .edit-modal-content {
@@ -647,7 +645,7 @@ input[type="file"] {
 .attachment-grid .announcement-image-wrapper {
   position: relative;
   width: 100%;
-  padding-bottom: 100%; /* 1:1 aspect ratio */
+  padding-bottom: 100%; 
   border-radius: 10px;
   overflow: hidden;
 }
@@ -663,7 +661,6 @@ input[type="file"] {
 }
 
 
-/* --- NEW STYLES FOR EDIT MODAL ATTACHMENTS --- */
 .attachment-editor {
   margin-top: 15px;
   padding-top: 15px;
@@ -687,7 +684,6 @@ input[type="file"] {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 8px;
 }
-/* Make sure new file preview has a little space */
 #editNewFilePreviewContainer {
   margin-top: 10px;
 }
@@ -751,14 +747,13 @@ input[type="file"] {
 .edit-form .file-upload-label {
   width: 100%;
   text-align: center;
-  box-sizing: border-box; /* Ensure padding doesn't break layout */
+  box-sizing: border-box; 
   margin-top: 5px;
 }
 #editUploadStatus {
   color: var(--secondary-color);
   font-weight: 500;
 }
-/* --- END OF NEW EDIT MODAL STYLES --- */
 
 
 @media (max-width: 600px) {
@@ -786,7 +781,6 @@ input[type="file"] {
   }
 }
 
-/* --- DARK MODE STYLES --- */
 .dark-mode {
   --primary-color: #99c0ff;
   --secondary-color: #6699ff;
@@ -969,7 +963,6 @@ input:checked + .slider:before {
   color: var(--primary-color);
 }
 
-/* --- DARK MODE FOR EDIT MODAL --- */
 .dark-mode .attachment-editor label {
   color: var(--primary-color);
 }
@@ -980,9 +973,6 @@ input:checked + .slider:before {
   color: var(--primary-color);
 }
 
-/* === REMOVED .fb-card styles === */
-
-/* --- MODAL HEADING STYLES --- */
 .modal-body h3 {
   margin-top: 20px;
   margin-bottom: 10px;
@@ -1001,7 +991,6 @@ input:checked + .slider:before {
   border-bottom: 1px solid var(--glass-border);
 }
 
-/* === ADDED: Styles for new destination label === */
 label[for="postDestination"] {
   font-weight: 600; 
   color: var(--secondary-color); 
@@ -1020,4 +1009,70 @@ label[for="postDestination"] i {
 .dark-mode label[for="postDestination"] i {
   color: #8b9dc3;
 }
-/* === END ADDITION === */
+
+.choice-modal-content {
+  max-width: 500px;
+}
+
+.choice-modal .modal-body p {
+  font-size: 18px;
+  color: var(--text-color);
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.dark-mode .choice-modal .modal-body p {
+  color: var(--text-color);
+}
+
+.choice-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.choice-actions button {
+  width: 100%;
+  margin: 0;
+  font-size: 16px;
+}
+
+.delete-btn-danger {
+  background-color: #a00;
+  color: white;
+}
+.delete-btn-danger:hover {
+  background-color: #800;
+}
+
+.edit-btn-fb {
+  background-color: #0866FF;
+  color: white;
+}
+.edit-btn-fb:hover {
+  background-color: #0652cc;
+}
+
+.modal-help-text {
+  display: block;
+  font-size: 13px;
+  color: var(--text-color);
+  opacity: 0.8;
+  margin-top: 20px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.dark-mode .modal-help-text {
+  color: var(--text-color);
+}
+
+#editFbTextModal {
+  z-index: 1002;
+}
+#editChoiceModal {
+  z-index: 1002;
+}
+#deleteChoiceModal {
+  z-index: 1002;
+}

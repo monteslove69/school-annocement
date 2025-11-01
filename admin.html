@@ -55,6 +55,7 @@
         <option value="facebook">Facebook Only</option>
       </select>
     </div>
+
     <button id="postBtn"><i class="fas fa-bullhorn"></i> Post Announcement</button>
     
     <button id="cancelUploadBtn" class="cancel-btn" style="display: none; margin-top: 0; width: 100%;">Cancel Upload</button>
@@ -144,6 +145,65 @@
       </div>
     </div>
   </div>
+
+  <div id="deleteChoiceModal" class="modal choice-modal">
+    <div class="modal-content choice-modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-trash"></i> Delete Options</h2>
+        <button id="closeDeleteChoiceModal" class="close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Where would you like to delete this post from?</p>
+        <div class="choice-actions">
+          <button id="deleteLocalBtn" class="delete-btn"><i class="fas fa-database"></i> Local Only</button>
+          <button id="deleteFbBtn" class="delete-btn-fb"><i class="fab fa-facebook"></i> Facebook Only</button>
+          <button id="deleteBothBtn" class="delete-btn-danger"><i class="fas fa-exclamation-triangle"></i> Delete Both</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="editChoiceModal" class="modal choice-modal">
+    <div class="modal-content choice-modal-content">
+      <div class="modal-header">
+        <h2><i class="fas fa-edit"></i> Edit Options</h2>
+        <button id="closeEditChoiceModal" class="close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <p>Where would you like to edit this post?</p>
+        <div class="choice-actions">
+          <button id="editLocalBtn" class="edit-btn"><i class="fas fa-database"></i> Edit Local</button>
+          <button id="editFbTextBtn" class="edit-btn-fb"><i class="fab fa-facebook"></i> Edit FB Text Only</button>
+          <button id="editBothBtn" class="update-btn"><i class="fas fa-sync-alt"></i> Edit Both (Sync)</button>
+        </div>
+        <small class="modal-help-text">
+          <b>Edit Local:</b> Change text, files, and category in the app.<br>
+          <b>Edit FB Text Only:</b> Update the text on Facebook (no files).<br>
+          <b>Edit Both:</b> Edit locally and sync text changes to Facebook.
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <div id="editFbTextModal" class="modal">
+    <div class="modal-content edit-modal-content">
+      <div class="modal-header">
+        <h2><i class="fab fa-facebook"></i> Edit Facebook Post Text</h2>
+        <button id="closeEditFbTextModal" class="close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-form">
+          <input type="text" id="editFbTitle" placeholder="Post Title">
+          <textarea id="editFbMessage" rows="4" placeholder="Post Message"></textarea>
+          <div class="edit-actions">
+            <button id="updateFbTextBtn" class="update-btn"><i class="fas fa-save"></i> Update Facebook Post</button>
+            <button id="cancelEditFbTextBtn" class="cancel-btn"><i class="fas fa-times"></i> Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
