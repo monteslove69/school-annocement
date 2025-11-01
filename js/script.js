@@ -135,6 +135,9 @@ if (loginBtn) {
 
 // --- GLOBAL FACEBOOK API FUNCTIONS ---
 
+// ===================================
+// === FUNCTION 1: FIXED ===
+// ===================================
 async function postToFacebookAPI(announcementData) {
     // !!! SECURITY WARNING: Token is embedded in client-side code !!!
     const PAGE_ID = '849836108213722';
@@ -142,6 +145,7 @@ async function postToFacebookAPI(announcementData) {
 
     let endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/feed`;
     const message = `${announcementData.title}\n\n${announcementData.message}`;
+    let postType = 'feed'; // <-- Track post type
     
     const params = new URLSearchParams();
     params.append('access_token', PAGE_ACCESS_TOKEN);
@@ -151,6 +155,7 @@ async function postToFacebookAPI(announcementData) {
     if (firstImage) {
         endpoint = `https://graph.facebook.com/v19.0/${PAGE_ID}/photos`;
         params.append('url', firstImage.downloadURL);
+        postType = 'photo'; // <-- It's a photo post
     }
 
     const fullUrl = `${endpoint}?${params.toString()}`;
@@ -171,7 +176,12 @@ async function postToFacebookAPI(announcementData) {
             throw new Error(`Facebook API returned status ${response.status}: ${JSON.stringify(result)}`);
         }
 
-        return result;
+        // Return an object with the ID and type
+        return {
+            id: result.id,
+            post_id: result.post_id, // Often returned for photos
+            type: postType
+        };
 
     } catch (error) {
         throw new Error(error.message || "A network or CORS error occurred."); 
@@ -473,7 +483,6 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
-
     function loadAnnouncements(category = 'All') {
         const announcementsList = document.getElementById('announcements-list');
         if (!announcementsList) return;
@@ -507,6 +516,7 @@ if (window.location.pathname.includes("admin.html")) {
                     snapshot.forEach((announcement) => {
                         allAnnouncements.push({
                             id: announcement.key,
+                            category: category, 
                             ...announcement.val()
                         });
                     });
@@ -626,6 +636,9 @@ if (window.location.pathname.includes("admin.html")) {
         announcementsList.appendChild(div);
     }
 
+    // ===================================
+    // === FUNCTION 2: FIXED ===
+    // ===================================
     function editAnnouncement(id, category) {
         db.ref(`announcements/${category}/${id}`).once('value')
             .then((snapshot) => {
@@ -658,6 +671,7 @@ if (window.location.pathname.includes("admin.html")) {
                 editUploadStatus.textContent = '';
                 
                 const originalFbPostId = data.fbPostId || null;
+                const originalFbPostType = data.fbPostType || 'feed'; // <-- Get the post type
 
                 const renderEditFilePreviews = () => {
                     editFilePreview.innerHTML = '';
@@ -782,7 +796,6 @@ if (window.location.pathname.includes("admin.html")) {
                     let finalAttachments = [...editFilesToKeep];
                     let currentFbPostId = originalFbPostId;
 
-                    // Upload new files (FIX: Await file upload completion before proceeding)
                     if (editFilesToUpload.length > 0) {
                         uploadAbortController = new AbortController();
                         try {
@@ -819,14 +832,21 @@ if (window.location.pathname.includes("admin.html")) {
                         timestamp: data.timestamp,
                         lastEdited: new Date().toISOString(),
                         attachments: finalAttachments,
-                        fbPostId: currentFbPostId 
+                        fbPostId: currentFbPostId,
+                        fbPostType: originalFbPostType // <-- Persist the post type
                     };
                     
                     // --- FACEBOOK UPDATE LOGIC START ---
                     let fbUpdatePromise = Promise.resolve();
-                    if (currentFbPostId) {
+
+                    // vvv THIS LOGIC IS NEW vvv
+                    if (currentFbPostId && originalFbPostType === 'photo') {
+                        // This is a photo post. We cannot edit it.
+                        console.warn('This is a photo post. Skipping Facebook update as it is not supported by the API for URL-based photos.');
+                        
+                    } else if (currentFbPostId) {
+                        // This is a 'feed' post, so we can try to edit it.
                         const newPostData = { title, message, attachments: finalAttachments };
-                        // Ensure we use the global function defined below
                         fbUpdatePromise = updatePostOnFacebookAPI(currentFbPostId, newPostData)
                             .catch(fbError => {
                                 console.error('Facebook Edit Failed:', fbError);
@@ -840,26 +860,34 @@ if (window.location.pathname.includes("admin.html")) {
                         const oldRef = db.ref(`announcements/${category}/${id}`);
                         const newRef = db.ref(`announcements/${newCategory}`).push();
                         
-                        // FIX: Ensure all promises are handled correctly
                         Promise.all([
                             fbUpdatePromise,
                             newRef.set(updates)
                         ])
                             .then(() => oldRef.remove())
                             .then(() => {
-                                alert('✅ Announcement updated and moved to new category!');
+                                // vvv NEW ALERT LOGIC vvv
+                                if (currentFbPostId && originalFbPostType === 'photo') {
+                                    alert('✅ Announcement updated and moved in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
+                                } else {
+                                    alert('✅ Announcement updated and moved to new category!');
+                                }
                                 closeEditForm();
                                 loadAnnouncements(document.getElementById('filterCategory').value);
                             })
                             .catch(error => alert('❌ Error updating announcement: ' + error.message));
                     } else {
-                        // FIX: Ensure all promises are handled correctly
                         Promise.all([
                             fbUpdatePromise,
                             db.ref(`announcements/${category}/${id}`).update(updates)
                         ])
                             .then(() => {
-                                alert('✅ Announcement updated!');
+                                // vvv NEW ALERT LOGIC vvv
+                                if (currentFbPostId && originalFbPostType === 'photo') {
+                                    alert('✅ Announcement updated in Firebase.\n\n(Note: Editing Facebook photo posts is not supported, so the original Facebook post was not changed.)');
+                                } else {
+                                    alert('✅ Announcement updated!');
+                                }
                                 closeEditForm();
                                 loadAnnouncements(document.getElementById('filterCategory').value);
                             })
@@ -991,31 +1019,46 @@ if (window.location.pathname.includes("admin.html")) {
             });
     }
 
+    // ===================================
+    // === FUNCTION 3: FIXED ===
+    // ===================================
     function postScheduledNow(key) {
         const ref = db.ref('scheduled_announcements/' + key);
         ref.once('value')
             .then(snap => {
                 const data = snap.val();
                 if (!data) throw new Error('Scheduled announcement not found');
-                const postRef = db.ref('announcements/' + data.category).push();
                 
                 const postData = { ...data };
                 delete postData.scheduledAt; 
                 postData.timestamp = new Date().toISOString(); 
                 postData.scheduledFrom = data.scheduledAt; 
 
-                const p = postRef.set(postData)
-                    .then(async () => {
-                        if (postData.postToFacebook) {
-                            try {
-                                await postToFacebookAPI(postData);
-                                console.log(`Scheduled post ${key} also posted to Facebook.`);
-                            } catch (fbError) {
-                                console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
+                // New logic to handle Facebook ID and Type
+                const p = (async () => {
+                    let fbPostId = null;
+                    let fbPostType = null; // <-- Add this
+                    if (postData.postToFacebook) {
+                        try {
+                            const fbResult = await postToFacebookAPI(postData);
+                            if (fbResult && fbResult.id) {
+                                fbPostId = fbResult.id;
+                                fbPostType = fbResult.type; // <-- Save the type
                             }
+                            console.log(`Scheduled post ${key} also posted to Facebook.`);
+                        } catch (fbError) {
+                            console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
                         }
-                        return ref.remove();
-                    });
+                    }
+                    
+                    postData.fbPostId = fbPostId; // Add the ID (or null)
+                    postData.fbPostType = fbPostType; // <-- Add the Type (or null)
+
+                    const postRef = db.ref('announcements/' + data.category).push();
+                    await postRef.set(postData); // Save complete data
+                    
+                    return ref.remove(); // Clean up
+                })();
                 return p;
             })
             .then(() => {
@@ -1039,6 +1082,9 @@ if (window.location.pathname.includes("admin.html")) {
 
     let _scheduledProcessorInterval = null;
 
+    // ===================================
+    // === FUNCTION 4: FIXED ===
+    // ===================================
     function startScheduledProcessor(intervalSeconds = 5) {
         if (_scheduledProcessorInterval) return;
 
@@ -1053,25 +1099,37 @@ if (window.location.pathname.includes("admin.html")) {
                     snapshot.forEach(child => {
                         const key = child.key;
                         const data = child.val();
-                        const postRef = db.ref('announcements/' + data.category).push();
                         
                         const postData = { ...data };
                         delete postData.scheduledAt;
                         postData.timestamp = new Date().toISOString();
                         postData.scheduledFrom = data.scheduledAt;
 
-                        const p = postRef.set(postData)
-                            .then(async () => {
-                                if (postData.postToFacebook) {
-                                    try {
-                                        await postToFacebookAPI(postData);
-                                        console.log(`Scheduled post ${key} also posted to Facebook.`);
-                                    } catch (fbError) {
-                                        console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
+                        // New logic to handle Facebook ID and Type
+                        const p = (async () => {
+                            let fbPostId = null;
+                            let fbPostType = null; // <-- Add this
+                            if (postData.postToFacebook) {
+                                try {
+                                    const fbResult = await postToFacebookAPI(postData);
+                                    if (fbResult && fbResult.id) {
+                                        fbPostId = fbResult.id;
+                                        fbPostType = fbResult.type; // <-- Save the type
                                     }
+                                    console.log(`Scheduled post ${key} also posted to Facebook.`);
+                                } catch (fbError) {
+                                    console.error(`Scheduled post ${key} FAILED to post to Facebook:`, fbError);
                                 }
-                                return db.ref('scheduled_announcements/' + key).remove();
-                        });
+                            }
+                            
+                            postData.fbPostId = fbPostId; // Add the ID (or null)
+                            postData.fbPostType = fbPostType; // <-- Add the Type (or null)
+
+                            const postRef = db.ref('announcements/' + data.category).push();
+                            await postRef.set(postData); // Save complete data
+                            
+                            return db.ref('scheduled_announcements/' + key).remove(); // Clean up
+                        })();
 
                         tasks.push(p); 
                     });
@@ -1091,11 +1149,11 @@ if (window.location.pathname.includes("admin.html")) {
                 .catch(err => {
                     console.warn('Scheduled processor error:', err.message || err);
                 });
-    };
+        };
 
-    run();
-    _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
-    console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
+        run();
+        _scheduledProcessorInterval = setInterval(run, intervalSeconds * 1000);
+        console.log(`Scheduled processor started, running every ${intervalSeconds} seconds.`);
     }
 
     async function uploadFileToCloudinary(file, signal) {
@@ -1180,7 +1238,7 @@ if (window.location.pathname.includes("admin.html")) {
                         alert('Upload canceled.');
                         uploadStatus.textContent = 'Upload canceled.';
                     } else {
-                        alert('❌ Error uploading files: ' + error.message);
+                        alert('❌ Error uploading files: ' + error.message); 
                         uploadStatus.textContent = 'An upload failed.';
                     }
                     postBtn.disabled = false;
@@ -1206,6 +1264,9 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
+    // ===================================
+    // === FUNCTION 5: FIXED ===
+    // ===================================
     async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
@@ -1235,12 +1296,14 @@ if (window.location.pathname.includes("admin.html")) {
                 
                 const newPostRef = db.ref(`announcements/${dataToSave.category}`).push();
                 let fbPostId = null;
+                let fbPostType = null; // <-- Add this
 
                 if (dataToSave.postToFacebook) {
                     try {
                         const fbResult = await postToFacebookAPI(dataToSave);
                         if (fbResult && fbResult.id) {
                             fbPostId = fbResult.id; 
+                            fbPostType = fbResult.type; // <-- Save the type
                         }
                         alert('✅ Announcement posted successfully to Firebase and Facebook!');
                     } catch (fbError) {
@@ -1252,6 +1315,7 @@ if (window.location.pathname.includes("admin.html")) {
                 }
                 
                 dataToSave.fbPostId = fbPostId;
+                dataToSave.fbPostType = fbPostType; // <-- Save the type to Firebase
                 await newPostRef.set(dataToSave);
             }
 
