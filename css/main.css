@@ -888,7 +888,7 @@ input:checked + .slider:before {
 @media (min-width: 600px) {
   body {
     padding: 20px;
-    padding-bottom: 140px; /* leave space for the fixed bottom nav + comfortable margin */
+    padding-bottom: 20px;
   }
   .filter-container {
     flex-direction: row;
@@ -902,22 +902,12 @@ input:checked + .slider:before {
     margin: 10px 0;
   }
   .nav-tabs {
-    /* Keep the nav visible and clickable on desktop: fixed bottom center */
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
-    margin: 0;
+    position: relative;
+    width: fit-content;
+    margin: 0 auto 30px;
     height: 50px;
     border-radius: 10px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-    z-index: 10000; /* ensure it's above other content */
-  }
-
-  /* Ensure announcements list has additional bottom padding on desktop so last item is not hidden */
-  #announcements, #search-results-announcements {
-    padding-bottom: 160px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   }
   .nav-tab {
     font-size: 0.9em;
