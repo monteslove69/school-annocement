@@ -61,7 +61,7 @@ input, textarea, select {
   color: var(--secondary-color);
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Added for better sizing */
 }
 
 input:focus, textarea:focus, select:focus {
@@ -97,6 +97,7 @@ button {
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.1s;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  -webkit-tap-highlight-color: transparent; /* For mobile taps */
 }
 #postBtn {
   background: var(--primary-color);
@@ -126,6 +127,8 @@ button {
   z-index: 1000;
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
+  padding: 10px; /* Added for small screen spacing */
+  box-sizing: border-box; /* Added */
 }
 
 .modal.show {
@@ -146,7 +149,7 @@ button {
   transform: scale(0.7);
   opacity: 0;
   transition: all 0.3s ease-in-out;
-  max-height: 90vh;
+  max-height: 95vh; /* Responsive improvement */
   display: flex;
   flex-direction: column;
 }
@@ -216,6 +219,7 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 
 .schedule-toggle {
@@ -251,7 +255,7 @@ button {
 }
 
 .datetime-wrapper.active {
-  max-height: 120px;
+  max-height: 120px; /* Default height */
   opacity: 1;
   transform: translateY(0);
 }
@@ -263,6 +267,7 @@ button {
   border: 1px solid rgba(255,255,255,0.2);
   background: rgba(255,255,255,0.1);
   color: var(--secondary-color);
+  min-width: 150px; /* Ensure it doesn't get too small */
 }
 
 .schedule-actions {
@@ -281,6 +286,7 @@ button {
   align-items: center;
   gap: 10px;
   text-align: left;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 
 .scheduled-meta {
@@ -310,6 +316,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 
 .category-filter label {
@@ -337,6 +344,7 @@ button {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 10px;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 
 .announcement-title {
@@ -344,6 +352,8 @@ button {
   font-size: 1.2em;
   color: var(--secondary-color);
   text-shadow: none;
+  margin-right: 10px; /* Add spacing */
+  flex: 1; /* Allow title to take space */
 }
 
 .announcement-category {
@@ -355,6 +365,7 @@ button {
   flex-shrink: 0;
   margin-left: 10px;
   transition: background-color 0.3s, color 0.3s;
+  margin-top: 5px; /* Add margin for when it wraps */
 }
 
 .announcement-item.category-urgent .announcement-category {
@@ -401,6 +412,7 @@ button {
 .announcement-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 
 .edit-btn, .delete-btn, .delete-btn-fb {
@@ -408,6 +420,7 @@ button {
   padding: 6px 12px;
   font-size: 14px;
   margin: 0;
+  flex-grow: 1; /* Make buttons grow on small screens */
 }
 
 .edit-btn {
@@ -455,11 +468,13 @@ button {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 
 .update-btn,
 .cancel-btn {
-  flex: 1;
+  flex: 1; /* Both buttons grow */
+  min-width: 120px; /* Ensure they don't get too small */
   padding: 12px;
   border-radius: 12px;
   font-size: 16px;
@@ -502,6 +517,7 @@ button {
   align-items: center;
   margin-top: 10px;
   margin-bottom: 5px;
+  flex-wrap: wrap; /* Responsive improvement */
 }
 .file-upload-label {
   padding: 8px 15px;
@@ -512,6 +528,9 @@ button {
   font-size: 14px;
   font-weight: 500;
   transition: background-color 0.3s;
+  flex-grow: 1; /* Responsive improvement */
+  text-align: center; /* Responsive improvement */
+  margin-bottom: 5px; /* Responsive improvement */
 }
 .file-upload-label:hover {
   background-color: var(--primary-color);
@@ -533,6 +552,7 @@ input[type="file"] {
   padding: 5px;
   margin: 0;
   box-shadow: none;
+  flex-shrink: 0; /* Responsive improvement */
 }
 #uploadStatus {
   color: var(--secondary-color);
@@ -636,6 +656,7 @@ input[type="file"] {
 
 .attachment-grid {
   display: grid;
+  /* This is responsive by default: it creates as many 100px columns as fit, then wraps */
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
   margin-top: 15px;
@@ -645,7 +666,7 @@ input[type="file"] {
 .attachment-grid .announcement-image-wrapper {
   position: relative;
   width: 100%;
-  padding-bottom: 100%; 
+  padding-bottom: 100%; /* Creates a square */
   border-radius: 10px;
   overflow: hidden;
 }
@@ -659,6 +680,34 @@ input[type="file"] {
   border-radius: 10px;
   border: 1px solid var(--glass-border);
 }
+
+/* === NEW STYLES FOR IMAGE OVERLAY === */
+.more-images-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+.more-images-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 10px; /* Matches the thumbnail radius */
+  opacity: 1;
+  transition: opacity 0.2s;
+  z-index: 2; /* Ensure it's on top of the image */
+}
+.more-images-wrapper:hover .more-images-overlay {
+  opacity: 0.8;
+}
+/* === END NEW STYLES === */
 
 
 .attachment-editor {
@@ -756,30 +805,11 @@ input[type="file"] {
 }
 
 
-@media (max-width: 600px) {
-  body {
-    padding: 10px;
-  }
-  h1 {
-    font-size: 1.8em;
-    margin-bottom: 10px;
-    margin-left: 0;
-    margin-right: 0;
-  }
-  .header-content {
-    flex-direction: column;
-    align-items: stretch;
-    margin-bottom: 20px;
-  }
-  #logoutBtn {
-    width: 100%;
-    margin-top: 10px;
-  }
-  .container {
-    padding: 15px;
-    margin: 15px auto;
-  }
-}
+/*
+===============================================
+  DARK MODE STYLES
+===============================================
+*/
 
 .dark-mode {
   --primary-color: #99c0ff;
@@ -1075,4 +1105,92 @@ label[for="postDestination"] i {
 }
 #deleteChoiceModal {
   z-index: 1002;
+}
+
+/*
+===============================================
+  RESPONSIVE MEDIA QUERY
+===============================================
+*/
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+  h1 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+  #logoutBtn {
+    width: 100%;
+    margin-top: 10px;
+  }
+  .container {
+    padding: 15px;
+    margin: 15px auto;
+    width: 100%; /* Use full width */
+    box-sizing: border-box; /* Include padding in width */
+  }
+
+  /* Responsive Modal */
+  .modal {
+    padding: 5px;
+  }
+  .modal-content {
+    width: 98%; /* Use more of the screen */
+    max-height: 95vh;
+  }
+  .modal-header {
+    padding: 15px;
+  }
+  .modal-body {
+    padding: 15px;
+  }
+
+  /* Stackable date/time */
+  .datetime-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .datetime-wrapper.active {
+    max-height: 200px; /* Increase height for stacked items */
+  }
+  .datetime-wrapper input[type="datetime-local"] {
+    width: 100%;
+  }
+
+  /* Stackable category filter */
+  .category-filter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .category-filter select {
+    width: 100%;
+  }
+
+  /* Stackable announcement header */
+  .announcement-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .announcement-category {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+
+  /* Stackable choice buttons in modal */
+  .choice-actions {
+    flex-direction: column;
+  }
+  .choice-actions button {
+    width: 100%;
+  }
 }

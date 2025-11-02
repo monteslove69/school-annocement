@@ -499,8 +499,8 @@ if (window.location.pathname.includes("admin.html")) {
                 announcementsList.innerHTML = `<div class="error">Error loading announcements: ${error.message}</div>`;
             });
     }
-
-    // --- MODIFIED: displayAnnouncement (Single Edit/Delete buttons) ---
+    
+    // --- (MODIFIED) displayAnnouncement (Fixes 4+ image grid) ---
     function displayAnnouncement(id, data) {
         const announcementsList = document.getElementById('announcements-list');
         if (!announcementsList) return; 
@@ -522,6 +522,7 @@ if (window.location.pathname.includes("admin.html")) {
             });
         }
 
+        // === MODIFIED ATTACHMENT LOGIC ===
         let attachmentHTML = '';
         if (data.attachments && data.attachments.length > 0) {
             const images = data.attachments.filter(att => att.isImage);
@@ -530,32 +531,32 @@ if (window.location.pathname.includes("admin.html")) {
 
             let imagesHTML = '';
             if (imageCount > 0) {
-                let gridClass = `grid-count-${imageCount}`;
-                if (imageCount >= 3) {
-                    gridClass = 'grid-count-3-plus';
-                }
-
-                if (imageCount === 1) {
+                
+                if (imageCount <= 3) {
+                    // Show 1, 2, or 3 images
                     imagesHTML = images.map(att => `<div class="announcement-image-wrapper">
                                      <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
                                    </div>`).join('');
-                } else if (imageCount === 2) {
-                     imagesHTML = images.map(att => `<div class="announcement-image-wrapper">
-                                     <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
-                                   </div>`).join('');
-                } else { // 3 or more
-                    imagesHTML = images.slice(0, 2) 
+                } else { 
+                    // 4 or more images
+                    // Show the first 3 images normally
+                    imagesHTML = images.slice(0, 3) 
                         .map(att => `<div class="announcement-image-wrapper">
                                        <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
                                      </div>`).join('');
                     
-                    const moreCount = imageCount - 2;
+                    // Calculate how many are left *after* the 4th
+                    const moreCount = imageCount - 4; // e.g., 6 images -> 6 - 4 = 2
+                    
+                    // Create the 4th box, using the 4th image (index 3)
                     imagesHTML += `<div class="announcement-image-wrapper more-images-wrapper">
-                                     <img src="${images[2].downloadURL}" alt="${images[2].fileName}" class="announcement-image-thumbnail">
-                                     <div class="more-images-overlay">+${moreCount}</div>
+                                     <img src="${images[3].downloadURL}" alt="${images[3].fileName}" class="announcement-image-thumbnail">
+                                     ${moreCount > 0 ? `<div class="more-images-overlay">+${moreCount}</div>` : ''}
                                    </div>`;
                 }
-                attachmentHTML += `<div class="attachment-grid ${gridClass}">${imagesHTML}</div>`;
+                
+                // Note: We removed the `gridClass` logic. The CSS handles the grid now.
+                attachmentHTML += `<div class="attachment-grid">${imagesHTML}</div>`;
             }
             
             if (files.length > 0) {
@@ -569,6 +570,7 @@ if (window.location.pathname.includes("admin.html")) {
                 attachmentHTML += `<div class="attachment-container">${filesHTML}</div>`;
             }
         }
+        // === END MODIFIED ATTACHMENT LOGIC ===
         
         // Escape single quotes in string parameters for onclick
         const fbPostId = data.fbPostId ? data.fbPostId.replace(/'/g, "\\'") : '';
@@ -907,18 +909,18 @@ if (window.location.pathname.includes("admin.html")) {
         }
     }
 
-    closeDeleteChoiceModal.onclick = () => deleteChoiceModal.classList.remove('show');
-    deleteLocalBtn.onclick = (e) => {
+    if (closeDeleteChoiceModal) closeDeleteChoiceModal.onclick = () => deleteChoiceModal.classList.remove('show');
+    if (deleteLocalBtn) deleteLocalBtn.onclick = (e) => {
         const { id, category } = e.currentTarget.dataset;
         deleteAnnouncementFirebase(id, category);
         deleteChoiceModal.classList.remove('show');
     };
-    deleteFbBtn.onclick = (e) => {
+    if (deleteFbBtn) deleteFbBtn.onclick = (e) => {
         const { id, category, fbPostId } = e.currentTarget.dataset;
         deleteAnnouncementFacebook(id, category, fbPostId);
         deleteChoiceModal.classList.remove('show');
     };
-    deleteBothBtn.onclick = (e) => {
+    if (deleteBothBtn) deleteBothBtn.onclick = (e) => {
         const { id, category, fbPostId } = e.currentTarget.dataset;
         deleteBoth(id, category, fbPostId);
         deleteChoiceModal.classList.remove('show');
@@ -951,18 +953,18 @@ if (window.location.pathname.includes("admin.html")) {
             editBothBtn.dataset.category = category;
         }
     }
-    closeEditChoiceModal.onclick = () => editChoiceModal.classList.remove('show');
-    editLocalBtn.onclick = (e) => {
+    if (closeEditChoiceModal) closeEditChoiceModal.onclick = () => editChoiceModal.classList.remove('show');
+    if (editLocalBtn) editLocalBtn.onclick = (e) => {
         const { id, category } = e.currentTarget.dataset;
         editAnnouncement(id, category, 'local'); // Call with 'local' mode
         editChoiceModal.classList.remove('show');
     };
-    editFbTextBtn.onclick = (e) => {
+    if (editFbTextBtn) editFbTextBtn.onclick = (e) => {
         const { id, category, fbPostId } = e.currentTarget.dataset;
         openEditFbTextModal(id, category, fbPostId);
         editChoiceModal.classList.remove('show');
     };
-    editBothBtn.onclick = (e) => {
+    if (editBothBtn) editBothBtn.onclick = (e) => {
         const { id, category } = e.currentTarget.dataset;
         editAnnouncement(id, category, 'both'); // Call with 'both' mode
         editChoiceModal.classList.remove('show');
@@ -1030,8 +1032,8 @@ if (window.location.pathname.includes("admin.html")) {
             updateFbTextBtn.innerHTML = '<i class="fas fa-save"></i> Update Facebook Post';
         };
     }
-    cancelEditFbTextBtn.onclick = () => editFbTextModal.classList.remove('show');
-    closeEditFbTextModal.onclick = () => editFbTextModal.classList.remove('show');
+    if (cancelEditFbTextBtn) cancelEditFbTextBtn.onclick = () => editFbTextModal.classList.remove('show');
+    if (closeEditFbTextModal) closeEditFbTextModal.onclick = () => editFbTextModal.classList.remove('show');
     // --- End Edit FB Text Modal Logic ---
 
 
