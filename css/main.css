@@ -34,8 +34,29 @@
   --overlay-bg: rgba(0, 0, 0, 0.95);
 }
 
+/* NEW: 3D Canvas Style
+  This positions the 3D canvas behind all content.
+  The z-index: -1 is crucial.
+*/
+#3d-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  /* We remove the body background to see the canvas */
+  background: transparent; 
+}
+
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  
+  /* MODIFIED: We remove the gradient from the body.
+    It's now controlled by the #3d-bg canvas and CSS vars.
+    This linear-gradient now acts as a *fallback* if JS is disabled.
+  */
   background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
   color: var(--text-color);
   text-align: center;
@@ -202,6 +223,12 @@ input:checked + .slider:before {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  
+  /* NEW: Enable 3D perspective
+    This tells the browser that child elements (the cards)
+    will be transformed in 3D space.
+  */
+  perspective: 1000px;
 }
 
 #search-results-announcements {
@@ -227,7 +254,11 @@ input:checked + .slider:before {
   box-shadow: var(--card-shadow);
   text-align: left;
   animation: fadeIn 0.6s ease;
-  transition: transform 0.3s ease, background 0.5s, border 0.5s, box-shadow 0.5s;
+  
+  /* MODIFIED: Added transition for transform.
+    This makes the 3D tilt smooth.
+  */
+  transition: transform 0.1s ease-out, background 0.5s, border 0.5s, box-shadow 0.5s;
   position: relative;
   cursor: pointer;
   box-sizing: border-box;
@@ -245,10 +276,14 @@ input:checked + .slider:before {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* MODIFIED: We remove the simple hover effect in favor
+  of the JavaScript-driven 3D tilt.
+*/
 .announcement:hover {
-  transform: translateY(-5px);
+  /* transform: translateY(-5px); */ /* <-- Replaced by JS */
   box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.2);
 }
+
 .announcement h3 {
   margin: 0 0 8px;
   color: var(--secondary-color);
@@ -383,9 +418,6 @@ input:checked + .slider:before {
 }
 .dark-mode .attachment-link:hover {
   background-color: var(--primary-color);
-}
-.attachment-link i {
-  font-size: 12px;
 }
 
 .attachments-grid {
@@ -885,6 +917,104 @@ input:checked + .slider:before {
   color: #c8f5a1;
 }
 
+/* NEW: Gemini API Feature Styles */
+
+.gemini-btn {
+  display: block;
+  margin: 20px auto 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 119, 255, 0.4);
+}
+
+.gemini-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 119, 255, 0.6);
+}
+
+.gemini-btn:disabled {
+  background: var(--time-color);
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+#summary-container {
+  display: none; /* Hidden by default */
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+.dark-mode #summary-container {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#summary-container h3 {
+  color: var(--primary-color);
+  margin: 0 0 10px;
+  font-size: 1.1em;
+  border-bottom: 1px solid var(--primary-color);
+  padding-bottom: 5px;
+}
+
+#summary-container p {
+  font-size: 1em;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+#summary-container .loading-spinner {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 10px auto;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--secondary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.dark-mode #summary-container .loading-spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: var(--secondary-color);
+}
+
+#hide-summary-btn {
+  font-size: 0.8em;
+  background: none;
+  border: 1px solid var(--time-color);
+  color: var(--time-color);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+#hide-summary-btn:hover {
+  background: var(--time-color);
+  color: white;
+}
+.dark-mode #hide-summary-btn:hover {
+  color: var(--bg-start);
+}
+
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (min-width: 600px) {
   body {
     padding: 20px;
@@ -999,3 +1129,4 @@ input:checked + .slider:before {
 .dark-mode #new-announcement-bar {
     background-color: var(--primary-color);
 }
+

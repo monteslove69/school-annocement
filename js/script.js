@@ -500,14 +500,16 @@ if (window.location.pathname.includes("admin.html")) {
             });
     }
     
-    // --- (MODIFIED) displayAnnouncement (Fixes 4+ image grid) ---
+    // --- (No changes to displayAnnouncement from last version) ---
     function displayAnnouncement(id, data) {
         const announcementsList = document.getElementById('announcements-list');
         if (!announcementsList) return; 
         
         const div = document.createElement('div');
         
-        div.className = `announcement-item category-${(data.category || 'unknown').toLowerCase()}`;
+        // Use 'Unknown' class if orphaned
+        const categoryClass = data.isOrphaned ? 'unknown' : (data.category || 'unknown').toLowerCase();
+        div.className = `announcement-item category-${categoryClass}`;
 
         let postedDate = '';
         if (data.timestamp) {
@@ -522,7 +524,6 @@ if (window.location.pathname.includes("admin.html")) {
             });
         }
 
-        // === MODIFIED ATTACHMENT LOGIC ===
         let attachmentHTML = '';
         if (data.attachments && data.attachments.length > 0) {
             const images = data.attachments.filter(att => att.isImage);
@@ -533,29 +534,23 @@ if (window.location.pathname.includes("admin.html")) {
             if (imageCount > 0) {
                 
                 if (imageCount <= 3) {
-                    // Show 1, 2, or 3 images
                     imagesHTML = images.map(att => `<div class="announcement-image-wrapper">
                                      <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
                                    </div>`).join('');
                 } else { 
-                    // 4 or more images
-                    // Show the first 3 images normally
                     imagesHTML = images.slice(0, 3) 
                         .map(att => `<div class="announcement-image-wrapper">
                                        <img src="${att.downloadURL}" alt="${att.fileName}" class="announcement-image-thumbnail">
                                      </div>`).join('');
                     
-                    // Calculate how many are left *after* the 4th
-                    const moreCount = imageCount - 4; // e.g., 6 images -> 6 - 4 = 2
+                    const moreCount = imageCount - 4; 
                     
-                    // Create the 4th box, using the 4th image (index 3)
                     imagesHTML += `<div class="announcement-image-wrapper more-images-wrapper">
                                      <img src="${images[3].downloadURL}" alt="${images[3].fileName}" class="announcement-image-thumbnail">
                                      ${moreCount > 0 ? `<div class="more-images-overlay">+${moreCount}</div>` : ''}
                                    </div>`;
                 }
                 
-                // Note: We removed the `gridClass` logic. The CSS handles the grid now.
                 attachmentHTML += `<div class="attachment-grid">${imagesHTML}</div>`;
             }
             
@@ -570,11 +565,16 @@ if (window.location.pathname.includes("admin.html")) {
                 attachmentHTML += `<div class="attachment-container">${filesHTML}</div>`;
             }
         }
-        // === END MODIFIED ATTACHMENT LOGIC ===
         
-        // Escape single quotes in string parameters for onclick
         const fbPostId = data.fbPostId ? data.fbPostId.replace(/'/g, "\\'") : '';
         const fbPostType = data.fbPostType ? data.fbPostType.replace(/'/g, "\\'") : '';
+        
+        const isOrphaned = data.isOrphaned || false;
+        
+        // Edit button is now ALWAYS enabled, but its function changes
+        const editButtonHTML = `<button class="edit-btn" onclick="openEditModal('${id}', '${data.category}', '${fbPostId}', '${fbPostType}', ${isOrphaned})">
+                                   <i class="fas fa-edit"></i> Edit
+                               </button>`;
         
         div.innerHTML = `
             <div class="announcement-header">
@@ -584,15 +584,14 @@ if (window.location.pathname.includes("admin.html")) {
             <div class="announcement-message readable-text">${data.message}</div>
             <div class="announcement-meta">
                 Posted on: ${postedDate}
+                ${isOrphaned ? '<br><b>This is a Facebook-only post.</b>' : ''} 
             </div>
             
             ${attachmentHTML} 
             
             <div class="announcement-actions">
-                <button class="edit-btn" onclick="openEditModal('${id}', '${data.category}', '${fbPostId}', '${fbPostType}')">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="delete-btn" onclick="openDeleteModal('${id}', '${data.category}', '${fbPostId}')">
+                ${editButtonHTML} 
+                <button class="delete-btn" onclick="openDeleteModal('${id}', '${data.category}', '${fbPostId}', ${isOrphaned})">
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
@@ -600,7 +599,7 @@ if (window.location.pathname.includes("admin.html")) {
         announcementsList.appendChild(div);
     }
     
-    // --- MODIFIED: editAnnouncement now accepts a 'mode' ---
+    // --- (No changes to editAnnouncement from last version) ---
     function editAnnouncement(id, category, mode = 'both') {
         db.ref(`announcements/${category}/${id}`).once('value')
             .then((snapshot) => {
@@ -879,23 +878,67 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(error => alert('❌ Error loading announcement: ' + error.message));
     }
 
+
     // --- NEW: Delete Choice Modal Logic ---
     const deleteChoiceModal = document.getElementById('deleteChoiceModal');
     const closeDeleteChoiceModal = document.getElementById('closeDeleteChoiceModal');
     const deleteLocalBtn = document.getElementById('deleteLocalBtn');
     const deleteFbBtn = document.getElementById('deleteFbBtn');
     const deleteBothBtn = document.getElementById('deleteBothBtn');
+    
+    // ===========================================
+    // === MODIFICATION START: New reset function and updated openDeleteModal ===
+    // ===========================================
+    
+    /**
+     * Helper function to close the delete modal and reset all buttons to be visible.
+     */
+    const closeDeleteModalAndReset = () => {
+        deleteChoiceModal.classList.remove('show');
+        // Reset button visibility for the next time
+        deleteLocalBtn.style.display = 'block';
+        deleteFbBtn.style.display = 'block';
+        deleteBothBtn.style.display = 'block';
+    };
 
-    function openDeleteModal(id, category, fbPostId) {
-        if (!fbPostId) {
-            // No FB post, just do a simple local delete
-            if (confirm('Are you sure you want to delete this announcement?')) {
-                deleteAnnouncementFirebase(id, category);
-            }
-        } else {
-            // Has a FB post, show the choice modal
+    function openDeleteModal(id, category, fbPostId, isOrphaned) {
+        
+        if (isOrphaned) {
+            // This is a Facebook-Only post.
+            // Show the modal but ONLY with the "Delete Both" button.
             deleteChoiceModal.classList.add('show');
-            // Store data on buttons to be picked up by listeners
+
+            // Hide the irrelevant buttons
+            deleteLocalBtn.style.display = 'none';
+            deleteFbBtn.style.display = 'none';
+            
+            // Show and configure the "Delete Both" button
+            deleteBothBtn.style.display = 'block';
+            deleteBothBtn.dataset.id = id;
+            deleteBothBtn.dataset.category = category;
+            deleteBothBtn.dataset.fbPostId = fbPostId;
+        
+        } else if (!fbPostId) {
+            // This is a standard local-only post. No modal needed.
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                db.ref(`announcements/${category}/${id}`).remove()
+                  .then(() => {
+                      alert('✅ Announcement deleted from Firebase!');
+                      loadAnnouncements(document.getElementById('filterCategory').value);
+                  })
+                  .catch(error => alert('❌ Error deleting from Firebase: ' + error.message));
+            }
+        
+        } else {
+            // This is a standard, synced post (local + FB). Show the 3-button modal.
+            deleteChoiceModal.classList.add('show');
+            
+            // Make sure all buttons are visible
+            deleteLocalBtn.style.display = 'block';
+            deleteFbBtn.style.display = 'block';
+            deleteBothBtn.style.display = 'block';
+
+            // Store data on buttons
             deleteLocalBtn.dataset.id = id;
             deleteLocalBtn.dataset.category = category;
             
@@ -909,22 +952,74 @@ if (window.location.pathname.includes("admin.html")) {
         }
     }
 
-    if (closeDeleteChoiceModal) closeDeleteChoiceModal.onclick = () => deleteChoiceModal.classList.remove('show');
-    if (deleteLocalBtn) deleteLocalBtn.onclick = (e) => {
-        const { id, category } = e.currentTarget.dataset;
-        deleteAnnouncementFirebase(id, category);
-        deleteChoiceModal.classList.remove('show');
+    if (closeDeleteChoiceModal) closeDeleteChoiceModal.onclick = closeDeleteModalAndReset;
+    
+    // Updated onclick handlers to use the reset function
+    if (deleteLocalBtn) deleteLocalBtn.onclick = async (e) => {
+        const button = e.currentTarget;
+        const { id, category } = button.dataset;
+        const originalHtml = button.innerHTML;
+
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Unlinking...'; 
+
+        try {
+            await unlinkLocalAnnouncement(id, category); 
+        } catch (error) {
+            console.error("Local unlink failed:", error); 
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+            closeDeleteModalAndReset(); // Use reset function
+        }
     };
-    if (deleteFbBtn) deleteFbBtn.onclick = (e) => {
-        const { id, category, fbPostId } = e.currentTarget.dataset;
-        deleteAnnouncementFacebook(id, category, fbPostId);
-        deleteChoiceModal.classList.remove('show');
+    
+    if (deleteFbBtn) deleteFbBtn.onclick = async (e) => {
+        const button = e.currentTarget;
+        const { id, category, fbPostId } = button.dataset;
+        const originalHtml = button.innerHTML;
+
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        
+        try {
+            await deleteAnnouncementFacebook(id, category, fbPostId);
+        } catch (error) {
+            console.error("FB delete failed:", error);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+            closeDeleteModalAndReset(); // Use reset function
+        }
     };
-    if (deleteBothBtn) deleteBothBtn.onclick = (e) => {
-        const { id, category, fbPostId } = e.currentTarget.dataset;
-        deleteBoth(id, category, fbPostId);
-        deleteChoiceModal.classList.remove('show');
+    
+    if (deleteBothBtn) deleteBothBtn.onclick = async (e) => {
+        const button = e.currentTarget;
+        const { id, category, fbPostId } = button.dataset;
+        
+        if (!confirm('Are you sure you want to delete this post from BOTH Facebook and the local app?')) {
+            return; 
+        }
+
+        const originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+        try {
+            await deleteBoth(id, category, fbPostId);
+        } catch (error) {
+            console.error("Delete both failed:", error);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+            closeDeleteModalAndReset(); // Use reset function
+        }
     };
+    // ===========================================
+    // === MODIFICATION END ===
+    // ===========================================
+
+
     // --- End Delete Choice Modal Logic ---
 
 
@@ -935,12 +1030,28 @@ if (window.location.pathname.includes("admin.html")) {
     const editFbTextBtn = document.getElementById('editFbTextBtn');
     const editBothBtn = document.getElementById('editBothBtn');
 
-    function openEditModal(id, category, fbPostId, fbPostType) {
-        if (!fbPostId || fbPostType !== 'feed') {
-            // No FB post OR it's a photo post (cant edit text), just open local editor
+    // --- (No changes to openEditModal from last version) ---
+    function openEditModal(id, category, fbPostId, fbPostType, isOrphaned) {
+        
+        if (isOrphaned) {
+            // This is a Facebook-Only post.
+            // We can only edit the text on Facebook.
+            if (fbPostType === 'feed') {
+                // Directly open the "Edit FB Text" modal.
+                openEditFbTextModal(id, category, fbPostId);
+            } else {
+                // It's an orphaned photo post, which can't be edited.
+                alert("Editing photo/album posts on Facebook is not supported.");
+            }
+        
+        } else if (!fbPostId || fbPostType !== 'feed') {
+            // This is a normal local-only or local+photo post.
+            // Just open the standard local editor.
             editAnnouncement(id, category, 'local'); 
+        
         } else {
-            // Is a 'feed' post, show choices
+            // This is a normal, synced local+feed post.
+            // Show the 3-button choice modal.
             editChoiceModal.classList.add('show');
             editLocalBtn.dataset.id = id;
             editLocalBtn.dataset.category = category;
@@ -953,6 +1064,7 @@ if (window.location.pathname.includes("admin.html")) {
             editBothBtn.dataset.category = category;
         }
     }
+
     if (closeEditChoiceModal) closeEditChoiceModal.onclick = () => editChoiceModal.classList.remove('show');
     if (editLocalBtn) editLocalBtn.onclick = (e) => {
         const { id, category } = e.currentTarget.dataset;
@@ -1037,19 +1149,69 @@ if (window.location.pathname.includes("admin.html")) {
     // --- End Edit FB Text Modal Logic ---
 
 
-    // --- MODIFIED: Replaced single delete with 3 functions ---
-    function deleteAnnouncementFirebase(id, category) {
-        db.ref(`announcements/${category}/${id}`).remove()
+    // ===========================================
+    // === MODIFICATION START: Updated unlinkLocalAnnouncement ===
+    // ===========================================
+    
+    /**
+     * This function "unlinks" a post from local, turning it into an
+     * "orphaned" Facebook-only post. It moves it to the "Unknown" category
+     * AND saves the last known title/message.
+     */
+    function unlinkLocalAnnouncement(id, category) {
+        const oldRef = db.ref(`announcements/${category}/${id}`);
+        return oldRef.once('value')
+            .then(snapshot => {
+                const data = snapshot.val();
+                if (!data) {
+                    throw new Error("Post not found to unlink.");
+                }
+
+                // If it doesn't have an fbPostId, just delete it.
+                if (!data.fbPostId) {
+                    return oldRef.remove();
+                }
+
+                // It has an fbPostId, so we create an orphan record in the "Unknown" category
+                const newOrphanData = {
+                    title: data.title, // <-- MODIFIED: Use original title
+                    message: data.message, // <-- MODIFIED: Use original message
+                    category: "Unknown",
+                    attachments: [], // We can't manage FB attachments
+                    isOrphaned: true, // The important flag
+                    lastEdited: new Date().toISOString(),
+                    timestamp: data.timestamp, // Keep original timestamp
+                    fbPostId: data.fbPostId,
+                    fbPostType: data.fbPostType
+                };
+
+                const newRef = db.ref('announcements/Unknown').push(); // Move to 'Unknown'
+                
+                // Create the new orphan record and delete the old one
+                return Promise.all([
+                    newRef.set(newOrphanData),
+                    oldRef.remove()
+                ]);
+            })
             .then(() => {
-                alert('✅ Announcement deleted from Firebase!');
+                alert('✅ Announcement unlinked from local app. It is now listed under "Unknown".');
                 loadAnnouncements(document.getElementById('filterCategory').value);
             })
-            .catch(error => alert('❌ Error deleting from Firebase: ' + error.message));
+            .catch(error => {
+                alert('❌ Error unlinking announcement: ' + error.message);
+                throw error; // Re-throw error
+            });
     }
 
+    /**
+     * This function deletes a post from Facebook and updates the local
+     * record to remove the fbPostId.
+     */
     function deleteAnnouncementFacebook(id, category, fbPostId) {
-        deletePostOnFacebookAPI(fbPostId)
+        // This function now returns the promise
+        return deletePostOnFacebookAPI(fbPostId)
             .then(() => {
+                // Set fbPostId to null
                 return db.ref(`announcements/${category}/${id}`).update({
                     fbPostId: null,
                     fbPostType: null
@@ -1062,18 +1224,22 @@ if (window.location.pathname.includes("admin.html")) {
             .catch(error => {
                 console.error('Facebook Delete Failed:', error);
                 alert(`❌ Error deleting from Facebook: ${error.message}`);
+                throw error; // Re-throw error
             });
     }
 
+    /**
+     * This function deletes from BOTH Facebook and Firebase.
+     */
     async function deleteBoth(id, category, fbPostId) {
-        if (!confirm('Are you sure you want to delete this post from BOTH Facebook and the local app?')) {
-            return;
-        }
+        // The confirm() is now in the click handler
         
         try {
             // 1. Try to delete from Facebook
-            await deletePostOnFacebookAPI(fbPostId);
-            alert('✅ Post deleted from Facebook.');
+            if (fbPostId) { // Only try to delete if fbPostId exists
+                await deletePostOnFacebookAPI(fbPostId);
+                alert('✅ Post deleted from Facebook.');
+            }
         } catch (fbError) {
             console.error('Facebook Delete Failed:', fbError);
             alert(`⚠️ Warning: Failed to delete from Facebook, but will still try to delete locally. Error: ${fbError.message}`);
@@ -1085,11 +1251,14 @@ if (window.location.pathname.includes("admin.html")) {
             alert('✅ Announcement deleted from Firebase!');
         } catch (dbError) {
             alert(`❌ Error deleting from Firebase: ${dbError.message}`);
+            throw dbError; // Throw this error
         }
         
         loadAnnouncements(document.getElementById('filterCategory').value);
     }
-    // --- END DELETE MODIFICATIONS ---
+    // ===========================================
+    // === MODIFICATION END ===
+    // ===========================================
 
 
     function loadScheduledAnnouncements() {
@@ -1245,7 +1414,7 @@ if (window.location.pathname.includes("admin.html")) {
         }
     }
 
-    // --- MODIFIED: addPostButtonListener (for new destination logic) ---
+    // --- (No changes to addPostButtonListener from last version) ---
     function addPostButtonListener(postBtn) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
@@ -1331,7 +1500,7 @@ if (window.location.pathname.includes("admin.html")) {
         });
     }
 
-    // --- MODIFIED: saveAnnouncementToFirebase (for new destination logic) ---
+    // --- (No changes to saveAnnouncementToFirebase from last version) ---
     async function saveAnnouncementToFirebase(dataToSave, isScheduled, scheduledTime, postDestination) {
         const filePreviewContainer = document.getElementById('filePreviewContainer');
         const clearFilesBtn = document.getElementById('clearFilesBtn');
